@@ -25,7 +25,7 @@ export default function(api, options) {
             array = right;
           }
 
-          const item = t.memberExpression(array, t.clone(i), true);
+          const item = t.memberExpression(t.clone(array), t.clone(i), true);
           let assignment;
           if (t.isVariableDeclaration(left)) {
             assignment = left;
@@ -112,11 +112,13 @@ export default function(api, options) {
     let right = node.right;
 
     if (!t.isIdentifier(right) || !scope.hasBinding(right.name)) {
-      const uid = scope.generateUidIdentifier("arr");
+      const uid = scope.generateUid("arr");
       nodes.push(
-        t.variableDeclaration("var", [t.variableDeclarator(uid, right)]),
+        t.variableDeclaration("var", [
+          t.variableDeclarator(t.identifier(uid), right),
+        ]),
       );
-      right = uid;
+      right = t.identifier(uid);
     }
 
     const iterationKey = scope.generateUidIdentifier("i");
@@ -225,9 +227,11 @@ export default function(api, options) {
       // for (let i of test)
       id = scope.generateUidIdentifier("ref");
       declar = t.variableDeclaration(left.kind, [
-        t.variableDeclarator(left.declarations[0].id, id),
+        t.variableDeclarator(left.declarations[0].id, t.identifier(id.name)),
       ]);
-      intermediate = t.variableDeclaration("var", [t.variableDeclarator(id)]);
+      intermediate = t.variableDeclaration("var", [
+        t.variableDeclarator(t.identifier(id.name)),
+      ]);
     } else {
       throw file.buildCodeFrameError(
         left,
@@ -268,8 +272,11 @@ export default function(api, options) {
     const left = node.left;
     let declar;
 
-    const stepKey = scope.generateUidIdentifier("step");
-    const stepValue = t.memberExpression(stepKey, t.identifier("value"));
+    const stepKey = scope.generateUid("step");
+    const stepValue = t.memberExpression(
+      t.identifier(stepKey),
+      t.identifier("value"),
+    );
 
     if (
       t.isIdentifier(left) ||
@@ -292,18 +299,14 @@ export default function(api, options) {
       );
     }
 
-    //
-
-    const iteratorKey = scope.generateUidIdentifier("iterator");
-
     const template = buildForOf({
       ITERATOR_HAD_ERROR_KEY: scope.generateUidIdentifier("didIteratorError"),
       ITERATOR_COMPLETION: scope.generateUidIdentifier(
         "iteratorNormalCompletion",
       ),
       ITERATOR_ERROR_KEY: scope.generateUidIdentifier("iteratorError"),
-      ITERATOR_KEY: iteratorKey,
-      STEP_KEY: stepKey,
+      ITERATOR_KEY: scope.generateUidIdentifier("iterator"),
+      STEP_KEY: t.identifier(stepKey),
       OBJECT: node.right,
     });
 
