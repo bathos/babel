@@ -249,13 +249,26 @@ function checkDuplicatedNodes(ast) {
       // _context.next = 4;
       return isByRegenerator(node.left);
     } else if (node.type === "NumericLiteral") {
-      // _context.next = 4; // <-- The 4
-      return parentIs(
-        node,
-        parent =>
-          parent.type === "AssignmentExpression" &&
-          isByRegenerator(parent.left),
-      );
+      if (
+        parentIs(
+          node,
+          parent =>
+            parent.type === "AssignmentExpression" &&
+            isByRegenerator(parent.left),
+        )
+      ) {
+        // _context.next = 4; // <-- The 4
+        return true;
+      } else if (
+        parentIs(
+          node,
+          parent =>
+            parent.type === "CallExpression" && isByRegenerator(parent.callee),
+        )
+      ) {
+        // return _context.abrupt("break", 11); // <-- The 11
+        return true;
+      }
     }
     return false;
   };
