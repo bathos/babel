@@ -529,15 +529,17 @@ class BlockScoping {
     let placeholderPath;
     let index;
     if (this.has.hasReturn || this.has.hasBreakContinue) {
-      const ret = this.scope.generateUidIdentifier("ret");
+      const ret = this.scope.generateUid("ret");
 
       this.body.push(
-        t.variableDeclaration("var", [t.variableDeclarator(ret, call)]),
+        t.variableDeclaration("var", [
+          t.variableDeclarator(t.identifier(ret), call),
+        ]),
       );
       placeholderPath = "declarations.0.init" + basePath;
       index = this.body.length - 1;
 
-      this.buildHas(ret);
+      this.buildHas(t.identifier(ret));
     } else {
       this.body.push(t.expressionStatement(call));
       placeholderPath = "expression" + basePath;
@@ -560,12 +562,14 @@ class BlockScoping {
 
     let fnPath;
     if (this.loop) {
-      const ref = this.scope.generateUidIdentifier("loop");
+      const loopId = this.scope.generateUid("loop");
       const p = this.loopPath.insertBefore(
-        t.variableDeclaration("var", [t.variableDeclarator(ref, fn)]),
+        t.variableDeclaration("var", [
+          t.variableDeclarator(t.identifier(loopId), fn),
+        ]),
       );
 
-      placeholder.replaceWith(ref);
+      placeholder.replaceWith(t.identifier(loopId));
       fnPath = p[0].get("declarations.0.init");
     } else {
       placeholder.replaceWith(fn);

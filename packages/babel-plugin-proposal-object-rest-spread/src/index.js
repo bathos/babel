@@ -43,7 +43,7 @@ export default function(api, opts) {
       } else if (t.isLiteral(prop.key)) {
         keys.push(t.stringLiteral(String(prop.key.value)));
       } else {
-        keys.push(prop.key);
+        keys.push(t.cloneDeep(prop.key));
         allLiteral = false;
       }
     }
@@ -58,12 +58,10 @@ export default function(api, opts) {
     for (const propPath of path.get("properties")) {
       const key = propPath.get("key");
       if (propPath.node.computed && !key.isPure()) {
-        const identifier = path.scope.generateUidIdentifierBasedOnNode(
-          key.node,
-        );
-        const declarator = t.variableDeclarator(identifier, key.node);
+        const name = path.scope.generateUidBasedOnNode(key.node);
+        const declarator = t.variableDeclarator(t.identifier(name), key.node);
         impureComputedPropertyDeclarators.push(declarator);
-        key.replaceWith(identifier);
+        key.replaceWith(t.identifier(name));
       }
     }
     return impureComputedPropertyDeclarators;
@@ -268,14 +266,14 @@ export default function(api, opts) {
         if (leftPath.isObjectPattern() && hasRestElement(leftPath)) {
           const nodes = [];
 
-          const ref = path.scope.generateUidIdentifierBasedOnNode(
+          const refName = path.scope.generateUidBasedOnNode(
             path.node.right,
             "ref",
           );
 
           nodes.push(
             t.variableDeclaration("var", [
-              t.variableDeclarator(ref, path.node.right),
+              t.variableDeclarator(t.identifier(refName), path.node.right),
             ]),
           );
 
@@ -283,7 +281,7 @@ export default function(api, opts) {
             impureComputedPropertyDeclarators,
             argument,
             callExpression,
-          ] = createObjectSpread(leftPath, file, ref);
+          ] = createObjectSpread(leftPath, file, t.identifier(refName));
 
           if (impureComputedPropertyDeclarators.length > 0) {
             nodes.push(
@@ -292,17 +290,14 @@ export default function(api, opts) {
           }
 
           const nodeWithoutSpread = t.clone(path.node);
-          nodeWithoutSpread.right = ref;
+          nodeWithoutSpread.right = t.identifier(refName);
           nodes.push(t.expressionStatement(nodeWithoutSpread));
           nodes.push(
             t.toStatement(
               t.assignmentExpression("=", argument, callExpression),
             ),
           );
-
-          if (ref) {
-            nodes.push(t.expressionStatement(ref));
-          }
+          nodes.push(t.expressionStatement(t.identifier(refName)));
 
           path.replaceWithMultiple(nodes);
         }

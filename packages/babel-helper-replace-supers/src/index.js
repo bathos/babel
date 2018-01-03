@@ -41,7 +41,7 @@ function getPrototypeOfExpression(objectRef, isStatic) {
         t.identifier("Object"),
         t.identifier("getPrototypeOf"),
       ),
-      [targetRef],
+      [t.cloneDeep(targetRef)],
     ),
   );
 }
@@ -141,7 +141,7 @@ export default class ReplaceSupers {
   };
 
   getObjectRef() {
-    return this.opts.objectRef || this.opts.getObjectRef();
+    return t.cloneDeep(this.opts.objectRef || this.opts.getObjectRef());
   }
 
   /**

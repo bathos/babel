@@ -130,7 +130,11 @@ export default function(api, options) {
     t.inherits(loop, node);
     t.ensureBlock(loop);
 
-    const iterationValue = t.memberExpression(right, iterationKey, true);
+    const iterationValue = t.memberExpression(
+      t.cloneDeep(right),
+      t.clone(iterationKey),
+      true,
+    );
 
     const left = node.left;
     if (t.isVariableDeclaration(left)) {
