@@ -166,7 +166,15 @@ function checkDuplicatedNodes(ast) {
     } else if (node.type === "Identifier") {
       if (/^_(?:context|value|callee|marked)\d*$/.test(node.name)) {
         return true;
-      } else if (/^t\d+$/.test(node.name) && parentIs(node, isByRegenerator)) {
+      } else if (
+        /^t\d+$/.test(node.name) &&
+        parentIs(
+          node,
+          parent =>
+            parent.type === "MemberExpression" &&
+            isByRegenerator(parent.object),
+        )
+      ) {
         // _context.t* // <-- t*
         return true;
       } else if (
@@ -263,7 +271,9 @@ function checkDuplicatedNodes(ast) {
         parentIs(
           node,
           parent =>
-            parent.type === "CallExpression" && isByRegenerator(parent.callee),
+            parent.type === "CallExpression" &&
+            parent.callee.type === "MemberExpression" &&
+            isByRegenerator(parent.callee.object),
         )
       ) {
         // return _context.abrupt("break", 11); // <-- The 11
