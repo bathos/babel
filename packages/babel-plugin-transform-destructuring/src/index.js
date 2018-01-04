@@ -166,7 +166,7 @@ export default function(api, options) {
         if (t.isIdentifier(key) && !prop.computed) {
           key = t.stringLiteral(prop.key.name);
         }
-        keys.push(key);
+        keys.push(t.clone(key));
       }
 
       keys = t.arrayExpression(keys);
