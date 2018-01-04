@@ -34,7 +34,7 @@ export default class LooseClassTransformer extends VanillaTransformer {
         classRef = this._protoAlias;
       }
       const methodName = t.memberExpression(
-        classRef,
+        t.clone(classRef),
         node.key,
         node.computed || t.isLiteral(node.key),
       );

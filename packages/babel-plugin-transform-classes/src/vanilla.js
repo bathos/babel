@@ -462,7 +462,7 @@ export default class ClassTransformer {
     const superRef = this.superName || t.identifier("Function");
     let thisRef = function() {
       const ref = path.scope.generateDeclaredUidIdentifier("this");
-      thisRef = () => ref;
+      thisRef = () => t.clone(ref);
       return ref;
     };
 
