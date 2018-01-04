@@ -76,7 +76,7 @@ export default function(api, options) {
 
     buildVariableDeclaration(id, init) {
       const declar = t.variableDeclaration("var", [
-        t.variableDeclarator(id, init),
+        t.variableDeclarator(t.clone(id), init),
       ]);
       declar._blockHoist = this.blockHoist;
       return declar;
