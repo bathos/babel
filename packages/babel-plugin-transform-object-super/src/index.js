@@ -39,8 +39,10 @@ export default function() {
         });
 
         if (objectRef) {
-          path.scope.push({ id: objectRef });
-          path.replaceWith(t.assignmentExpression("=", objectRef, path.node));
+          path.scope.push({ id: t.clone(objectRef) });
+          path.replaceWith(
+            t.assignmentExpression("=", t.clone(objectRef), path.node),
+          );
         }
       },
     },

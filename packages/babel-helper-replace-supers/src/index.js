@@ -240,12 +240,18 @@ export default class ReplaceSupers {
       // super.age += 2; -> let _ref = super.age; super.age = _ref + 2;
       ref = ref || path.scope.generateUidIdentifier("ref");
       return [
-        t.variableDeclaration("var", [t.variableDeclarator(ref, node.left)]),
+        t.variableDeclaration("var", [
+          t.variableDeclarator(t.clone(ref), node.left),
+        ]),
         t.expressionStatement(
           t.assignmentExpression(
             "=",
             node.left,
-            t.binaryExpression(node.operator.slice(0, -1), ref, node.right),
+            t.binaryExpression(
+              node.operator.slice(0, -1),
+              t.clone(ref),
+              node.right,
+            ),
           ),
         ),
       ];
