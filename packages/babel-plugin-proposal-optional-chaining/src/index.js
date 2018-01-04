@@ -7,7 +7,6 @@ export default function(api, options) {
   function optional(path, replacementPath) {
     const { scope } = path;
     const optionals = [];
-    const nil = scope.buildUndefinedNode();
 
     let objectPath = path;
     while (
@@ -45,7 +44,7 @@ export default function(api, options) {
       } else {
         ref = scope.maybeGenerateMemoised(chain);
         if (ref) {
-          check = t.assignmentExpression("=", ref, chain);
+          check = t.assignmentExpression("=", t.clone(ref), t.cloneDeep(chain));
           node[replaceKey] = ref;
         } else {
           check = ref = chain;
@@ -70,7 +69,7 @@ export default function(api, options) {
             context = object;
           }
 
-          node.arguments.unshift(context);
+          node.arguments.unshift(t.clone(context));
           node.callee = t.memberExpression(node.callee, t.identifier("call"));
         }
       }
@@ -78,17 +77,17 @@ export default function(api, options) {
       replacementPath.replaceWith(
         t.conditionalExpression(
           loose
-            ? t.binaryExpression("==", t.clone(check), t.nullLiteral())
+            ? t.binaryExpression("==", t.cloneDeep(check), t.nullLiteral())
             : t.logicalExpression(
                 "||",
-                t.binaryExpression("===", t.clone(check), t.nullLiteral()),
+                t.binaryExpression("===", t.cloneDeep(check), t.nullLiteral()),
                 t.binaryExpression(
                   "===",
                   t.clone(ref),
                   scope.buildUndefinedNode(),
                 ),
               ),
-          nil,
+          scope.buildUndefinedNode(),
           replacementPath.node,
         ),
       );
