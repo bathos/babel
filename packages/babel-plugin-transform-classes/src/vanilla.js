@@ -393,12 +393,12 @@ export default class ClassTransformer {
         // special case single arguments spread
         bareSuperNode.arguments[1] = bareSuperNode.arguments[1].argument;
         bareSuperNode.callee = t.memberExpression(
-          superRef,
+          t.clone(superRef),
           t.identifier("apply"),
         );
       } else {
         bareSuperNode.callee = t.memberExpression(
-          superRef,
+          t.clone(superRef),
           t.identifier("call"),
         );
       }

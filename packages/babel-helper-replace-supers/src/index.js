@@ -206,9 +206,9 @@ export default class ReplaceSupers {
       return;
     } else if (t.isMemberExpression(parent) && !methodNode.static) {
       // super.test -> objectRef.prototype.test
-      return t.memberExpression(superRef, t.identifier("prototype"));
+      return t.memberExpression(t.clone(superRef), t.identifier("prototype"));
     } else {
-      return superRef;
+      return t.clone(superRef);
     }
   }
 
