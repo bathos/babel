@@ -28,10 +28,18 @@ export default function cloneNode<T: Object>(node: T): T {
     }
   }
 
-  newNode.loc = node.loc;
-  newNode.leadingComments = node.leadingComments;
-  newNode.innerCmments = node.innerCmments;
-  newNode.trailingComments = node.trailingComments;
+  if (has(node, "loc")) {
+    newNode.loc = node.loc;
+  }
+  if (has(node, "leadingComments")) {
+    newNode.leadingComments = node.leadingComments;
+  }
+  if (has(node, "innerComments")) {
+    newNode.innerComments = node.innerCmments;
+  }
+  if (has(node, "trailingComments")) {
+    newNode.trailingComments = node.trailingComments;
+  }
 
   return newNode;
 }
