@@ -8,7 +8,7 @@ export default function populatePlaceholders(
   metadata: Metadata,
   replacements: TemplateReplacements,
 ): BabelNodeFile {
-  const ast = t.cloneDeep(metadata.ast);
+  const ast = t.cloneNode(metadata.ast);
 
   if (replacements) {
     metadata.placeholders.forEach(placeholder => {
