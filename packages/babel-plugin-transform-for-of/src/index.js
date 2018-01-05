@@ -25,7 +25,11 @@ export default function(api, options) {
             array = right;
           }
 
-          const item = t.memberExpression(t.clone(array), t.clone(i), true);
+          const item = t.memberExpression(
+            t.cloneNode(array),
+            t.cloneNode(i),
+            true,
+          );
           let assignment;
           if (t.isVariableDeclaration(left)) {
             assignment = left;
@@ -44,10 +48,10 @@ export default function(api, options) {
               t.variableDeclaration("let", inits),
               t.binaryExpression(
                 "<",
-                t.clone(i),
-                t.memberExpression(t.clone(array), t.identifier("length")),
+                t.cloneNode(i),
+                t.memberExpression(t.cloneNode(array), t.identifier("length")),
               ),
-              t.updateExpression("++", t.clone(i)),
+              t.updateExpression("++", t.cloneNode(i)),
               block,
             ),
           );
@@ -133,8 +137,8 @@ export default function(api, options) {
     t.ensureBlock(loop);
 
     const iterationValue = t.memberExpression(
-      t.cloneDeep(right),
-      t.clone(iterationKey),
+      t.cloneNode(right),
+      t.cloneNode(iterationKey),
       true,
     );
 

@@ -54,7 +54,7 @@ export default function(api, options) {
         value: VALUE
       });
     `({
-      REF: t.clone(ref),
+      REF: t.cloneNode(ref),
       KEY: t.isIdentifier(key) && !computed ? t.stringLiteral(key.name) : key,
       VALUE: value || scope.buildUndefinedNode(),
     });
@@ -63,7 +63,7 @@ export default function(api, options) {
   const buildClassPropertyLoose = (ref, { key, value, computed }, scope) => {
     return template.statement`MEMBER = VALUE`({
       MEMBER: t.memberExpression(
-        t.clone(ref),
+        t.cloneNode(ref),
         key,
         computed || t.isLiteral(key),
       ),
@@ -132,7 +132,7 @@ export default function(api, options) {
                 t.variableDeclarator(ident, computedNode.key),
               ]),
             );
-            computedNode.key = t.clone(ident);
+            computedNode.key = t.cloneNode(ident);
           }
         }
 
@@ -204,7 +204,7 @@ export default function(api, options) {
               t.expressionStatement(
                 t.callExpression(
                   t.memberExpression(
-                    t.clone(initialisePropsRef),
+                    t.cloneNode(initialisePropsRef),
                     t.identifier("call"),
                   ),
                   [t.thisExpression()],
@@ -235,7 +235,7 @@ export default function(api, options) {
         if (path.isClassExpression()) {
           path.scope.push({ id: ref });
           path.replaceWith(
-            t.assignmentExpression("=", t.clone(ref), path.node),
+            t.assignmentExpression("=", t.cloneNode(ref), path.node),
           );
         } else if (!path.node.id) {
           // Anonymous class declaration

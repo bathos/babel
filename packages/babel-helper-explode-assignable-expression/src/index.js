@@ -33,7 +33,7 @@ function getObjRef(node, nodes, file, scope) {
 
   const temp = scope.generateUidIdentifierBasedOnNode(ref);
   scope.push({ id: temp });
-  nodes.push(t.assignmentExpression("=", t.clone(temp), t.clone(ref)));
+  nodes.push(t.assignmentExpression("=", t.cloneNode(temp), t.cloneNode(ref)));
   return temp;
 }
 
@@ -44,7 +44,7 @@ function getPropRef(node, nodes, file, scope) {
 
   const temp = scope.generateUidIdentifierBasedOnNode(prop);
   scope.push({ id: temp });
-  nodes.push(t.assignmentExpression("=", t.clone(temp), t.cloneDeep(prop)));
+  nodes.push(t.assignmentExpression("=", t.cloneNode(temp), t.cloneNode(prop)));
   return temp;
 }
 
@@ -68,13 +68,13 @@ export default function(
   let ref, uid;
 
   if (t.isIdentifier(node)) {
-    ref = t.clone(node);
+    ref = t.cloneNode(node);
     uid = obj;
   } else {
     const prop = getPropRef(node, nodes, file, scope);
     const computed = node.computed || t.isLiteral(prop);
-    uid = t.memberExpression(t.clone(obj), t.clone(prop), computed);
-    ref = t.memberExpression(t.clone(obj), t.clone(prop), computed);
+    uid = t.memberExpression(t.cloneNode(obj), t.cloneNode(prop), computed);
+    ref = t.memberExpression(t.cloneNode(obj), t.cloneNode(prop), computed);
   }
 
   return {

@@ -44,7 +44,11 @@ export default function(api, options) {
       } else {
         ref = scope.maybeGenerateMemoised(chain);
         if (ref) {
-          check = t.assignmentExpression("=", t.clone(ref), t.cloneDeep(chain));
+          check = t.assignmentExpression(
+            "=",
+            t.cloneNode(ref),
+            t.cloneNode(chain),
+          );
           node[replaceKey] = ref;
         } else {
           check = ref = chain;
@@ -69,7 +73,7 @@ export default function(api, options) {
             context = object;
           }
 
-          node.arguments.unshift(t.clone(context));
+          node.arguments.unshift(t.cloneNode(context));
           node.callee = t.memberExpression(node.callee, t.identifier("call"));
         }
       }
@@ -77,13 +81,13 @@ export default function(api, options) {
       replacementPath.replaceWith(
         t.conditionalExpression(
           loose
-            ? t.binaryExpression("==", t.cloneDeep(check), t.nullLiteral())
+            ? t.binaryExpression("==", t.cloneNode(check), t.nullLiteral())
             : t.logicalExpression(
                 "||",
-                t.binaryExpression("===", t.cloneDeep(check), t.nullLiteral()),
+                t.binaryExpression("===", t.cloneNode(check), t.nullLiteral()),
                 t.binaryExpression(
                   "===",
-                  t.clone(ref),
+                  t.cloneNode(ref),
                   scope.buildUndefinedNode(),
                 ),
               ),

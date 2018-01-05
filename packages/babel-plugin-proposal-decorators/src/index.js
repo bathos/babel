@@ -75,8 +75,8 @@ export default function() {
       .reverse()
       .reduce(function(acc, decorator) {
         return buildClassDecorator({
-          CLASS_REF: t.clone(name),
-          DECORATOR: t.cloneDeep(decorator),
+          CLASS_REF: t.cloneNode(name),
+          DECORATOR: t.cloneNode(decorator),
           INNER: acc,
         }).expression;
       }, classPath.node);
@@ -166,9 +166,11 @@ export default function() {
             "=",
             descriptor,
             t.callExpression(state.addHelper("applyDecoratedDescriptor"), [
-              t.cloneDeep(target),
-              t.clone(property),
-              t.arrayExpression(decorators.map(dec => t.clone(dec.expression))),
+              t.cloneNode(target),
+              t.cloneNode(property),
+              t.arrayExpression(
+                decorators.map(dec => t.cloneNode(dec.expression)),
+              ),
               t.objectExpression([
                 t.objectProperty(
                   t.identifier("enumerable"),
@@ -182,21 +184,23 @@ export default function() {
       } else {
         acc = acc.concat(
           t.callExpression(state.addHelper("applyDecoratedDescriptor"), [
-            t.cloneDeep(target),
-            t.clone(property),
-            t.arrayExpression(decorators.map(dec => t.clone(dec.expression))),
+            t.cloneNode(target),
+            t.cloneNode(property),
+            t.arrayExpression(
+              decorators.map(dec => t.cloneNode(dec.expression)),
+            ),
             t.isObjectProperty(node) ||
             t.isClassProperty(node, { static: true })
               ? buildGetObjectInitializer({
                   TEMP: path.scope.generateDeclaredUidIdentifier("init"),
-                  TARGET: t.cloneDeep(target),
-                  PROPERTY: t.clone(property),
+                  TARGET: t.cloneNode(target),
+                  PROPERTY: t.cloneNode(property),
                 }).expression
               : buildGetDescriptor({
-                  TARGET: t.cloneDeep(target),
-                  PROPERTY: t.clone(property),
+                  TARGET: t.cloneNode(target),
+                  PROPERTY: t.cloneNode(property),
                 }).expression,
-            t.cloneDeep(target),
+            t.cloneNode(target),
           ]),
         );
       }
@@ -205,9 +209,9 @@ export default function() {
     }, []);
 
     return t.sequenceExpression([
-      t.assignmentExpression("=", t.clone(name), path.node),
+      t.assignmentExpression("=", t.cloneNode(name), path.node),
       t.sequenceExpression(exprs),
-      t.clone(name),
+      t.cloneNode(name),
     ]);
   }
 
@@ -238,7 +242,7 @@ export default function() {
 
         path.replaceWith(
           t.variableDeclaration("let", [
-            t.variableDeclarator(t.clone(ref), t.toExpression(node)),
+            t.variableDeclarator(t.cloneNode(ref), t.toExpression(node)),
           ]),
         );
       },
@@ -264,10 +268,10 @@ export default function() {
 
         path.replaceWith(
           t.callExpression(state.addHelper("initializerDefineProperty"), [
-            t.clone(path.get("left.object").node),
+            t.cloneNode(path.get("left.object").node),
             t.stringLiteral(path.get("left.property").node.name),
-            t.clone(path.get("right.arguments")[0].node),
-            t.clone(path.get("right.arguments")[1].node),
+            t.cloneNode(path.get("right.arguments")[0].node),
+            t.cloneNode(path.get("right.arguments")[1].node),
           ]),
         );
       },

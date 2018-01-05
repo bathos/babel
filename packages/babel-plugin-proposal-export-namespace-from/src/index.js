@@ -28,10 +28,10 @@ export default function() {
         nodes.push(
           t.importDeclaration(
             [t.importNamespaceSpecifier(uid)],
-            t.clone(node.source),
+            t.cloneNode(node.source),
           ),
           t.exportNamedDeclaration(null, [
-            t.exportSpecifier(t.clone(uid), exported),
+            t.exportSpecifier(t.cloneNode(uid), exported),
           ]),
         );
 

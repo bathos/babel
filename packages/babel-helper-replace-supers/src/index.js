@@ -41,7 +41,7 @@ function getPrototypeOfExpression(objectRef, isStatic) {
         t.identifier("Object"),
         t.identifier("getPrototypeOf"),
       ),
-      [t.cloneDeep(targetRef)],
+      [t.cloneNode(targetRef)],
     ),
   );
 }
@@ -141,7 +141,7 @@ export default class ReplaceSupers {
   };
 
   getObjectRef() {
-    return t.cloneDeep(this.opts.objectRef || this.opts.getObjectRef());
+    return t.cloneNode(this.opts.objectRef || this.opts.getObjectRef());
   }
 
   /**
@@ -206,9 +206,12 @@ export default class ReplaceSupers {
       return;
     } else if (t.isMemberExpression(parent) && !methodNode.static) {
       // super.test -> objectRef.prototype.test
-      return t.memberExpression(t.clone(superRef), t.identifier("prototype"));
+      return t.memberExpression(
+        t.cloneNode(superRef),
+        t.identifier("prototype"),
+      );
     } else {
-      return t.clone(superRef);
+      return t.cloneNode(superRef);
     }
   }
 
@@ -241,7 +244,7 @@ export default class ReplaceSupers {
       ref = ref || path.scope.generateUidIdentifier("ref");
       return [
         t.variableDeclaration("var", [
-          t.variableDeclarator(t.clone(ref), node.left),
+          t.variableDeclarator(t.cloneNode(ref), node.left),
         ]),
         t.expressionStatement(
           t.assignmentExpression(
@@ -249,7 +252,7 @@ export default class ReplaceSupers {
             node.left,
             t.binaryExpression(
               node.operator.slice(0, -1),
-              t.clone(ref),
+              t.cloneNode(ref),
               node.right,
             ),
           ),

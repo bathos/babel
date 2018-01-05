@@ -34,7 +34,7 @@ export default function(api, options) {
         path.replaceWith(node.declaration);
         path.insertAfter(
           t.exportNamedDeclaration(null, [
-            t.exportSpecifier(t.clone(ref), t.identifier("default")),
+            t.exportSpecifier(t.cloneNode(ref), t.identifier("default")),
           ]),
         );
       },

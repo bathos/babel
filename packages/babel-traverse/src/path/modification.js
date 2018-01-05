@@ -111,10 +111,10 @@ export function insertAfter(nodes) {
       const temp = this.scope.generateDeclaredUidIdentifier();
       nodes.unshift(
         t.expressionStatement(
-          t.assignmentExpression("=", t.clone(temp), this.node),
+          t.assignmentExpression("=", t.cloneNode(temp), this.node),
         ),
       );
-      nodes.push(t.expressionStatement(t.clone(temp)));
+      nodes.push(t.expressionStatement(t.cloneNode(temp)));
     }
     return this.replaceExpressionWithStatements(nodes);
   } else if (Array.isArray(this.container)) {

@@ -18,10 +18,10 @@ export default function() {
         const nodes = [
           t.importDeclaration(
             [t.importDefaultSpecifier(uid)],
-            t.clone(node.source),
+            t.cloneNode(node.source),
           ),
           t.exportNamedDeclaration(null, [
-            t.exportSpecifier(t.clone(uid), exported),
+            t.exportSpecifier(t.cloneNode(uid), exported),
           ]),
         ];
 

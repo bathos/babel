@@ -213,7 +213,7 @@ export default class Scope {
   generateDeclaredUidIdentifier(name: string = "temp") {
     const id = this.generateUidIdentifier(name);
     this.push({ id });
-    return t.clone(id);
+    return t.cloneNode(id);
   }
 
   /**
@@ -332,7 +332,7 @@ export default class Scope {
       const id = this.generateUidIdentifierBasedOnNode(node);
       if (!dontPush) {
         this.push({ id });
-        return t.clone(id);
+        return t.cloneNode(id);
       }
       return id;
     }

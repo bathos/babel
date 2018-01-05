@@ -43,7 +43,7 @@ export default function(api, opts) {
       } else if (t.isLiteral(prop.key)) {
         keys.push(t.stringLiteral(String(prop.key.value)));
       } else {
-        keys.push(t.cloneDeep(prop.key));
+        keys.push(t.cloneNode(prop.key));
         allLiteral = false;
       }
     }
@@ -72,7 +72,7 @@ export default function(api, opts) {
     const props = path.get("properties");
     const last = props[props.length - 1];
     t.assertRestElement(last.node);
-    const restElement = t.clone(last.node);
+    const restElement = t.cloneNode(last.node);
     last.remove();
 
     const impureComputedPropertyDeclarators = replaceImpureComputedKeys(path);
@@ -93,7 +93,7 @@ export default function(api, opts) {
       impureComputedPropertyDeclarators,
       restElement.argument,
       t.callExpression(file.addHelper("objectWithoutProperties"), [
-        t.cloneDeep(objRef),
+        t.cloneNode(objRef),
         keyExpression,
       ]),
     ];
@@ -122,7 +122,7 @@ export default function(api, opts) {
 
       parentPath.ensureBlock();
       parentPath.get("body").unshiftContainer("body", declar);
-      paramPath.replaceWith(t.clone(uid));
+      paramPath.replaceWith(t.cloneNode(uid));
     }
   }
 
@@ -180,7 +180,7 @@ export default function(api, opts) {
                 this.originalPath.replaceWith(
                   t.variableDeclarator(
                     this.originalPath.node.id,
-                    t.clone(initRef),
+                    t.cloneNode(initRef),
                   ),
                 );
 
@@ -293,7 +293,7 @@ export default function(api, opts) {
             );
           }
 
-          const nodeWithoutSpread = t.clone(path.node);
+          const nodeWithoutSpread = t.cloneNode(path.node);
           nodeWithoutSpread.right = t.identifier(refName);
           nodes.push(t.expressionStatement(nodeWithoutSpread));
           nodes.push(
@@ -324,7 +324,7 @@ export default function(api, opts) {
 
           node.body.body.unshift(
             t.variableDeclaration("var", [
-              t.variableDeclarator(left, t.clone(temp)),
+              t.variableDeclarator(left, t.cloneNode(temp)),
             ]),
           );
 
@@ -345,7 +345,7 @@ export default function(api, opts) {
 
         node.body.body.unshift(
           t.variableDeclaration(node.left.kind, [
-            t.variableDeclarator(pattern, t.clone(key)),
+            t.variableDeclarator(pattern, t.cloneNode(key)),
           ]),
         );
       },

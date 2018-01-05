@@ -76,7 +76,7 @@ export default function(api, options) {
 
     buildVariableDeclaration(id, init) {
       const declar = t.variableDeclaration("var", [
-        t.variableDeclarator(t.clone(id), init),
+        t.variableDeclarator(t.cloneNode(id), init),
       ]);
       declar._blockHoist = this.blockHoist;
       return declar;
@@ -166,7 +166,7 @@ export default function(api, options) {
         if (t.isIdentifier(key) && !prop.computed) {
           key = t.stringLiteral(prop.key.name);
         }
-        keys.push(t.clone(key));
+        keys.push(t.cloneNode(key));
       }
 
       keys = t.arrayExpression(keys);
@@ -223,7 +223,7 @@ export default function(api, options) {
         if (t.isRestElement(prop)) {
           this.pushObjectRest(pattern, objRef, prop, i);
         } else {
-          this.pushObjectProperty(prop, t.clone(objRef));
+          this.pushObjectProperty(prop, t.cloneNode(objRef));
         }
       }
     }
