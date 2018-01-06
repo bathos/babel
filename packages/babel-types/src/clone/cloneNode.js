@@ -21,7 +21,7 @@ export default function cloneNode<T: Object>(node: T): T {
   } else if (!isNode(node)) {
     throw new Error(`Unknown node type: "${type}"`);
   } else {
-    for (const field in NODE_FIELDS[type]) {
+    for (const field of Object.keys(NODE_FIELDS[type])) {
       if (has(node, field)) {
         newNode[field] = cloneIfNodeOrArray(node[field]);
       }
@@ -40,6 +40,15 @@ export default function cloneNode<T: Object>(node: T): T {
   if (has(node, "trailingComments")) {
     newNode.trailingComments = node.trailingComments;
   }
+  if (has(node, "extra")) {
+    newNode.extra = shallowClone(node.extra);
+  }
 
   return newNode;
+}
+
+function shallowClone<T: Object>(obj: T): T {
+  const newObj = (({}: any): T);
+  for (const key of Object.keys(obj)) newObj[key] = obj[key];
+  return newObj;
 }
