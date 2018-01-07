@@ -47,7 +47,9 @@ export default function(api, options) {
           check = t.assignmentExpression(
             "=",
             t.cloneNode(ref),
-            t.cloneNode(chain),
+            // Here `chain` MUST NOT be cloned because it could be updated
+            // when generating the memoised context of a call espression
+            chain,
           );
           node[replaceKey] = ref;
         } else {
