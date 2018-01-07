@@ -244,7 +244,7 @@ export default class ReplaceSupers {
       ref = ref || path.scope.generateUidIdentifier("ref");
       return [
         t.variableDeclaration("var", [
-          t.variableDeclarator(t.cloneNode(ref), node.left),
+          t.variableDeclarator(t.cloneNode(ref), t.cloneNode(node.left)),
         ]),
         t.expressionStatement(
           t.assignmentExpression(
