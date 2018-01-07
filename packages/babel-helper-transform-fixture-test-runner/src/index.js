@@ -240,6 +240,22 @@ function checkDuplicatedNodes(ast) {
           node,
           parent =>
             parent.type === "CallExpression" &&
+            parent.arguments.length === 3 &&
+            parent.arguments[1] === node &&
+            parent.callee.type === "MemberExpression" &&
+            parent.callee.property.type === "Identifier" &&
+            parent.callee.property.name === "wrap",
+        )
+      ) {
+        // regeneratorRuntime.wrap(function foo$(_context) {
+        //   ...
+        // }, foo, this); // <- foo
+        return true;
+      } else if (
+        parentIs(
+          node,
+          parent =>
+            parent.type === "CallExpression" &&
             parent.callee.type === "MemberExpression" &&
             parent.callee.property.type === "Identifier" &&
             parent.callee.property.name === "mark",
