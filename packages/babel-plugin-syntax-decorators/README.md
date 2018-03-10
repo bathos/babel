@@ -33,3 +33,10 @@ require("@babel/core").transform("code", {
   plugins: ["@babel/plugin-syntax-decorators"]
 });
 ```
+
+## Options
+
+### `legacy` (default: `true`)
+
+When `true`, this plugin parses decorators based on the old version of the
+proposal.
