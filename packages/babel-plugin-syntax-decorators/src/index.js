@@ -3,7 +3,7 @@ import { declare } from "@babel/helper-plugin-utils";
 export default declare((api, options) => {
   api.assertVersion(7);
 
-  const { legacy = true } = options;
+  const { legacy = false } = options;
   if (typeof legacy !== "boolean") {
     throw new Error("'legacy' must be a boolean.");
   }

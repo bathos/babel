@@ -1,9 +1,10 @@
 import { parse } from "@babel/core";
+import cases from "jest-in-case";
 import proposalDecorators from "../lib";
 
 describe("legacy option", function() {
-  const oldSyntax = "@dec export class Foo {}";
-  const newSyntax = "export @dec class Foo {}";
+  const OLD = "@dec export class Foo {}";
+  const NEW = "export @dec class Foo {}";
 
   function makeParser(code, options) {
     return () =>
@@ -17,33 +18,19 @@ describe("legacy option", function() {
     expect(makeParser("", { legacy: "legacy" })).toThrow();
   });
 
-  describe.skip("default", function() {
-    test("parses legacy syntax", function() {
-      expect(makeParser(oldSyntax, {})).not.toThrow();
-    });
-
-    test("doesn't parse new syntax", function() {
-      expect(makeParser(newSyntax, {})).toThrow();
-    });
-  });
-
-  describe("true", function() {
-    test("parses legacy syntax", function() {
-      expect(makeParser(oldSyntax, { legacy: true })).not.toThrow();
-    });
-
-    test("doesn't parse new syntax", function() {
-      expect(makeParser(newSyntax, { legacy: true })).toThrow();
-    });
-  });
-
-  describe("false", function() {
-    test("doesn't parses legacy syntax", function() {
-      expect(makeParser(oldSyntax, { legacy: false })).toThrow();
-    });
-
-    test("parses new syntax", function() {
-      expect(makeParser(newSyntax, { legacy: false })).not.toThrow();
-    });
-  });
+  cases(
+    "behavior",
+    ({ code, legacy, throws }) => {
+      const expectTheParser = expect(makeParser(code, { legacy }));
+      throws ? expectTheParser.toThrow() : expectTheParser.not.toThrow();
+    },
+    [
+      { name: "default - old syntax", code: OLD, throws: false, skip: true },
+      { name: "default - new syntax", code: NEW, throws: true, skip: true },
+      { name: "true - old syntax", code: OLD, legacy: true, throws: false },
+      { name: "true - new syntax", code: NEW, legacy: true, throws: true },
+      { name: "false - old syntax", code: OLD, legacy: false, throws: true },
+      { name: "false - new syntax", code: NEW, legacy: false, throws: false },
+    ],
+  );
 });
