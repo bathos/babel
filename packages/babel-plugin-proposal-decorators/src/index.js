@@ -2,13 +2,13 @@
 
 import { declare } from "@babel/helper-plugin-utils";
 import syntaxDecorators from "@babel/plugin-syntax-decorators";
-import visitor from "./visitor";
+import visitor from "./transformer";
 import legacyVisitor from "./legacy-transformer";
 
 export default declare((api, options) => {
   api.assertVersion(7);
 
-  const { legacy = true } = options;
+  const { legacy = false } = options;
   if (typeof legacy !== "boolean") {
     throw new Error("'legacy' must be a boolean.");
   }
