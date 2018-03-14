@@ -898,6 +898,9 @@ helpers.decorate = () => template.program.ast`
       elements.push(newElement);
     }
 
+    // 28. Let elements be CoalesceClassElements(elements).
+    elements = _coalesceClassElements(elements);
+
     // 30. Let decorated be ? DecorateClass(elements, decorators)
     var decorated = _decorateClass(elements, decorators);
 
@@ -934,6 +937,82 @@ helpers.decorate = () => template.program.ast`
     if (def.decorators) element.decorators = def.decorators;
 
     return element;
+  }
+
+  // CoalesceGetterSetter
+  function _coalesceGetterSetter(element, other) {
+    // 2. If element.[[Descriptor]] has a [[Get]] field,
+    if (element.descriptor.get !== undefined) {
+      // 2.a Set other.[[Descriptor]].[[Get]] to element.[[Descriptor]].[[Get]].
+      other.descriptor.get = element.descriptor.get;
+    } else {
+      // 3.b Set other.[[Descriptor]].[[Set]] to element.[[Descriptor]].[[Set]].
+      other.descriptor.set = element.descriptor.set;
+    }
+  }
+
+  // CoalesceClassElements
+  function _coalesceClassElements(elements) {
+    // 1. Let newElements be a new empty List.
+    const newElements = [];
+
+    // 2. For element in elements
+    for (var i = 0; i < elements.length; i++) {
+      var element = elements[i];
+
+      // 2.a If element.[[Kind]] is "method" and newElements contains a Record
+      //     other where other.[[Kind]] is "method",
+      //     SameValue(other.[[Key]], element.[[Key]]) is true, and
+      //     other.[[Placement]] is element.[[Placement]],
+      var index = newElements.findIndex(function(other) {
+        return (
+          other.kind === element.kind &&
+          other.key === element.key &&
+          other.placement === element.placement
+        );
+      });
+      if (element.kind === "method" && index !== -1) {
+        var other = newElements[index];
+
+        // 2.a.i If element.[[Decorators]] is not empty,
+        if (element.decorators && element.decorators.length > 0) {
+          // 2.a.i.1 If other.[[Decorators]] is not empty,
+          //         throw a ReferenceError exception.
+          if (other.decorators && other.decorators.length > 0) {
+            throw new ReferenceError();
+          }
+
+          // 2.a.i.2 Set other.[[Decorators]] to element.[[Decorators]].
+          other.decorators = element.decorators;
+        }
+
+        // 2.a.ii If IsDataDescriptor(element.[[Descriptor]]) is true or
+        //        IsDataDescriptor(other.[[Descriptor]]) is true, then
+        if (
+          _isDataDescriptor(element.descriptor) ||
+          _isDataDescriptor(other.descriptor)
+        ) {
+          // 2.a.ii.3 Set other.[[Descriptor]] to element.[[Descriptor]].
+          other.descriptor = element.descriptor;
+        } else {
+          // 2.a.iii.1 Perform ! CoalesceGetterSetter(element, other).
+          _coalesceGetterSetter(element, other);
+        }
+      } else {
+        // 2.b Otherwise, append element to newElements.
+        newElements.push(element);
+      }
+    }
+
+    // 3. Return newElements.
+    return newElements;
+  }
+
+  function _isDataDescriptor(desc) {
+    return (
+      desc !== undefined &&
+      !(desc.value === undefined && desc.writable === undefined)
+    );
   }
 
   // InitializeClassElements
@@ -992,18 +1071,22 @@ helpers.decorate = () => template.program.ast`
     for (var i = 0; i < elements.length; i++) {
       var element = elements[i];
 
-      // 3.a Let elementFinishersExtras be ? DecorateElement(element, keys);
-      var elementFinishersExtras = _decorateElement(element, keys);
+      if (element.decorators && element.decorators.length) {
+        // 3.a Let elementFinishersExtras be ? DecorateElement(element, keys);
+        var elementFinishersExtras = _decorateElement(element, keys);
 
-      // 3.b Append elementFinishersExtras.[[Element]] to newElements.
-      // 3.c Concatenate elementFinishersExtras.[[Extras]] onto newElements.
-      newElements = newElements.concat(
-        [elementFinishersExtras.element],
-        elementFinishersExtras.extras
-      );
+        // 3.b Append elementFinishersExtras.[[Element]] to newElements.
+        // 3.c Concatenate elementFinishersExtras.[[Extras]] onto newElements.
+        newElements = newElements.concat(
+          [elementFinishersExtras.element],
+          elementFinishersExtras.extras
+        );
 
-      // 3.c Concatenate elementFinishersExtras.[[Finishers]] onto finishers.
-      finishers = finishers.concat(elementFinishersExtras.finishers);
+        // 3.c Concatenate elementFinishersExtras.[[Finishers]] onto finishers.
+        finishers = finishers.concat(elementFinishersExtras.finishers);
+      } else {
+        newElements.push(element);
+      }
     }
 
     // 4. Let result be ? DecorateConstructor(newElements, decorators);
