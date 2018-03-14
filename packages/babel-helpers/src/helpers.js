@@ -880,3 +880,459 @@ helpers.applyDecoratedDescriptor = () => template.program.ast`
         return desc;
     }
 `;
+
+helpers.decorate = () => template.program.ast`
+  import toArray from "toArray";
+
+  // ClassDefinitionEvaluation
+  export default function _decorate(F, definitions, decorators) {
+    // 26. Let elements be a new empty list
+    var elements = [];
+    // 27. For each ClassElement d in order from definitions
+    for (var i = 0; i < definitions.length; i++) {
+      var d = definitions[i];
+
+      // 27.c Let newElement be the result of performing ClassElementEvaluation
+      //      for d with arguments F, true and empty
+      var newElement = _createElementDescriptor(F, d);
+      elements.push(newElement);
+    }
+
+    // 30. Let decorated be ? DecorateClass(elements, decorators)
+    var decorated = _decorateClass(elements, decorators);
+
+    // 34. Set the value of F's [[Elements]] internal slot to decorated.[[Elements]]
+    // 35. Perform ? InitializeClassElements(F, proto).
+    _initializeClassElements(F, F.prototype, decorated.elements);
+
+    // 37. Return ? RunClassFinishers(F, decorated.[[Finishers]]).
+    return _runClassFinishers(F, decorated.finishers);
+  }
+
+  // ClassElementEvaluation
+  function _createElementDescriptor(Class, def) {
+    switch (def.placement) {
+      case "prototype":
+        var homeObject = Class.prototype;
+        break;
+      case "static":
+        var homeObject = Class;
+        break;
+      case "own":
+        throw new Error("Own properties are not supported by Babel yet.");
+    }
+
+    var element = {
+      kind: "method",
+      key: def.key,
+      placement: def.placement,
+      descriptor: Object.getOwnPropertyDescriptor(homeObject, def.key)
+      // initializer,
+      // extras,
+      // finisher
+    };
+    if (def.decorators) element.decorators = def.decorators;
+
+    return element;
+  }
+
+  // InitializeClassElements
+  function _initializeClassElements(F, proto, elements) {
+    // 5. For each item element in order from elements,
+    for (var i = 0; i < elements.length; i++) {
+      var element = elements[i];
+
+      // 5.b If element.[[Kind]] is "method",
+      if (element.kind === "method") {
+        // 5.b.i Let receiver be F if element.[[Placement]] is "static",
+        //       else let receiver be proto.
+        var receiver = element.placement === "static" ? F : proto;
+
+        // 5.b.ii Perform ? DefineClassElement(receiver, element).
+        Object.defineProperty(receiver, element.key, element.descriptor);
+      } else {
+        throw new Error("Class fields are not supported by Babel yet.");
+      }
+    }
+  }
+
+  // RunClassFinishers
+  function _runClassFinishers(constructor, finishers) {
+    // 1. For each finisher in finishers, do
+    for (var i = 0; i < finishers.length; i++) {
+      // 1.a Let newConstructor be Call(finisher, undefined, « constructor »).
+      var newConstructor = (0, finishers[i])(constructor);
+
+      // 1.b If newConstructor is not undefined,
+      if (newConstructor !== undefined) {
+        // 1.b.i If IsConstructor(newConstructor) is false, throw a TypeError exception.
+        if (typeof newConstructor !== "function") throw new TypeError();
+
+        // 1.b.ii Let constructor be newConstructor.
+        constructor = newConstructor;
+      }
+    }
+
+    // 2. Return constructor.
+    return constructor;
+  }
+
+  // DecorateClass
+  function _decorateClass(elements, decorators) {
+    // 1. Let newElements, finishers and keys each be a new empty list.
+    var newElements = [];
+    var finishers = [];
+    // 2. For each element in elements, do
+    // 2.a. Append element.[[Key]] to keys.
+    var keys = elements.map(function(element) {
+      return element.key;
+    });
+
+    // 3. For each element in elements, do
+    for (var i = 0; i < elements.length; i++) {
+      var element = elements[i];
+
+      // 3.a Let elementFinishersExtras be ? DecorateElement(element, keys);
+      var elementFinishersExtras = _decorateElement(element, keys);
+
+      // 3.b Append elementFinishersExtras.[[Element]] to newElements.
+      // 3.c Concatenate elementFinishersExtras.[[Extras]] onto newElements.
+      newElements = newElements.concat(
+        [elementFinishersExtras.element],
+        elementFinishersExtras.extras
+      );
+
+      // 3.c Concatenate elementFinishersExtras.[[Finishers]] onto finishers.
+      finishers = finishers.concat(elementFinishersExtras.finishers);
+    }
+
+    // 4. Let result be ? DecorateConstructor(newElements, decorators);
+    var result = _decorateConstructor(newElements, decorators);
+
+    // 5. Set result.[[Finishers]] to the concatenation of finishers
+    //    and result.[[Finishers]].
+    result.finishers = finishers.concat(result.finishers);
+
+    // 6. Return result.
+    return result;
+  }
+
+  // DecorateElement
+  function _decorateElement(element, keys) {
+    // 1. Let extras be a new empty List.
+    // 2. Let finishers be a new empty List.
+    var extras = [];
+    var finishers = [];
+
+    // 3. For each decorator in element.[[Decorators]], in reverse list order do
+    for (var i = element.decorators.length - 1; i >= 0; i--) {
+      var decorator = element.decorators[i];
+
+      // 3.b. Remove element.[[Key]] from keys
+      keys.splice(keys.indexOf(element.key), 1);
+
+      // 3.c Let elementObject be ? FromElementDescriptor(element).
+      // 3.d Let elementFinisherExtrasObject be ? Call(decorator, undefined, elementObject).
+      // 3.e Let elementFinisherExtras be ? ToElementDescriptor(elementFinisherExtrasObject).
+      var elementFinisherExtras = _toElementDescriptor(
+        decorator(_fromElementDescriptor(element))
+      );
+
+      // 3.f Let element be elementFinisherExtras.[[Element]]
+      element = elementFinisherExtras.element;
+
+      _decorateElement_pushKey(keys, element);
+
+      // 3.i If elementFinisherExtras.[[Finisher]] is not undefined
+      if (elementFinisherExtras.finisher) {
+        // 3.i.i Append elementFinisherExtras.[[Finisher]] to finishers
+        finishers.push(elementFinisherExtras.finisher);
+      }
+
+      // 3.j Let newExtras be elementFinisherExtras.[[Extras]]
+      var newExtras = elementFinisherExtras.extras;
+
+      // 3.k If newExtras is not undefined, then
+      if (newExtras) {
+        // 3.k.i For each extra of newExtras, do
+        for (var i = 0; i < newExtras.length; i++) {
+          _decorateElement_pushKey(keys, newExtras[i]);
+        }
+      }
+    }
+
+    return { element, finishers, extras };
+  }
+
+  // DecorateElement - Steps 3.g-3.h and 3.k.i.1-3.k.i.2
+  function _decorateElement_pushKey(keys, element) {
+    // 3.g If element.[[Key]] is an element of keys, throw a TypeError
+    //     exception
+    if (keys.indexOf(element.key) !== -1) {
+      throw new TypeError("Duplicated key");
+    }
+
+    // 3.h Otherwise, append element.[[Key]] to keys
+    keys.push(element.key);
+  }
+
+  // DecorateConstructor
+  function _decorateConstructor(elements, decorators) {
+    // 2. Let finishers be a new empty List.
+    var finishers = [];
+
+    // 3. For each decorator in decorators, in reverse list order do
+    for (var i = decorators.length - 1; i >= 0; i--) {
+      var decorator = decorators[i];
+
+      // 3.a Let obj be FromClassDescriptor(elements).
+      // 3.b Let result be ? Call(decorator, undefined, obj).
+      // 3.c Let elementsAndFinisher be ? ToClassDescriptor(result).
+      var elementsAndFinisher = _toClassDescriptor(
+        decorator(_fromClassDescriptor(elements))
+      );
+
+      // 3.d If elementsAndFinisher.[[Finisher]] is not undefined,
+      if (elementsAndFinisher.finisher !== undefined) {
+        // 3.d.i Append elementsAndFinisher.[[Finisher]] to finishers.
+        finishers.push(elementsAndFinisher.finisher);
+      }
+
+      // 3.e If elementsAndFinisher.[[Elements]] is not undefined,
+      if (elementsAndFinisher.elements !== undefined) {
+        // 3.e.i Set elements to elementsAndFinisher.[[Elements]].
+        elements = elementsAndFinisher.elements;
+
+        // 3.e.ii If there are two class elements a and b in elements such
+        //        that a.[[Key]] is b.[[Key]], throw a TypeError exception.
+        for (var j = 0; j < elements.length - 1; j++) {
+          for (var k = j + 1; k < elements.length; k++) {
+            if (elements[j].key === elements[k].key) {
+              throw new Error("Duplicated key.");
+            }
+          }
+        }
+      }
+    }
+
+    return { elements: elements, finishers: finishers };
+  }
+
+  // FromElementDescriptor
+  function _fromElementDescriptor(element) {
+    // 1. Let obj be ! ObjectCreate(%ObjectPrototype%).
+    // 5. Perform ! CreateDataPropertyOrThrow(obj, "kind", element.[[Kind]]).
+    // 6. Perform ! CreateDataPropertyOrThrow(obj, "key", element.[[Key]]).
+    // 7. Perform ! CreateDataPropertyOrThrow(obj, "placement", element.[[Placement]]).
+    // 8. Perform ! CreateDataPropertyOrThrow(
+    //      obj,
+    //      "descriptor",
+    //      ! FromPropertyDescriptor(element.[[Descriptor]])
+    //    ).
+    var obj = {
+      kind: element.kind,
+      key: element.key,
+      placement: element.placement,
+      descriptor: element.descriptor
+    };
+
+    // 2. If element.[[Kind]] is "method",
+    // 2.a Let desc be PropertyDescriptor {
+    //       [[Value]]: "Method Descriptor",
+    //       [[Writable]]: false,
+    //       [[Enumerable]]: false,
+    //       [[Configurable]]: true
+    //     }.
+    // NOTE: kind === "field" is not supported yet.
+    var desc = { value: "Method Descriptor", configurable: true };
+
+    // 4. Perform ! DefinePropertyOrThrow(obj, @@toStringTag, desc).
+    Object.defineProperty(obj, Symbol.toStringTag, desc);
+
+    // 9. If element.[[Kind]] is "field",
+    // NOT SUPPORTED YET
+
+    // 10. Return obj.
+    return obj;
+  }
+
+  // ToElementDescriptors
+  function _toElementDescriptors(elementObjects) {
+    // 1. If elementObjects is undefined, return undefined.
+    if (!elementObjects) return;
+
+    // 2. Let elements be a new empty List.
+    // 3. let elementObjectList be ? IterableToList(elementObjects).
+    // 4. For each elementObject in elementObjectList, do
+    // 4.a  Append ToElementDescriptor(elementObject) to elements.
+    // 5. Return elements.
+    return toArray(elementObjects).forEach(_toElementDescriptor);
+  }
+
+  // ToElementDescriptor
+  function _toElementDescriptor(elementObject) {
+    // 1. Let kind be ? ToString(? Get(descriptor, "kind")).
+    var kind = String(elementObject.kind);
+    // 2. If kind is not one of "method" or "field", throw a TypeError exception.
+    if (kind !== "method" && kind !== "field") {
+      throw new TypeError();
+    } else if (kind === "field") {
+      throw new TypeError("Field decorators are not supported by Babel yet.");
+    }
+
+    // 3. Let key be ? Get(descriptor, "key").
+    var key = elementObject.key;
+    // 4. Set key to ? ToPrimitive(key, hint String).
+    if (typeof key !== "string" && typeof key !== "symbol") key = String(key);
+
+    // 5. If key is not a Private Name, set key to ? ToPropertyKey(key).
+    // NOT SUPPORTED YET
+
+    // 6. Let placement be ? ToString(? Get(descriptor, "placement")).
+    var placement = String(elementObject.placement);
+    // 7. If placement is not one of "static", "prototype", or "own",
+    //    throw a TypeError exception.
+    if (
+      placement !== "static" &&
+      placement !== "prototype" &&
+      placement !== "own"
+    ) {
+      throw new TypeError();
+    } else if (placement === "own") {
+      throw new TypeError("Own properties are not supported by Babel yet.");
+    }
+
+    // 8. Let descriptor be ? ToPropertyDescriptor(? Get(descriptor, "descriptor")).
+    var descriptor = elementObject.descriptor;
+
+    // 9. Let initializer be ? Get(descriptor, "initializer").
+    // NOT SUPPORTED YET
+
+    // 10. Let finisher be ? Get(descriptor, "finisher").
+    // 11. If IsCallable(finisher) is false and finisher is not undefined,
+    //     throw a TypeError exception.
+    var finisher = _optionalCallableProperty(elementObject, "finisher");
+
+    // 12. Let extrasObject be ? Get(descriptor, "extras").
+    // 13. Let extras be ? ToElementDescriptors(extrasObject).
+    var extras = _toElementDescriptors(elementObject.extras);
+
+    // 14. Let elements be ? Get(descriptor, "elements").
+    // 15. If elements is not undefined, throw a TypeError exception.
+    _disallowProperty(elementObject, "elements");
+
+    // 16. If kind not "field",
+    // 16.a  If initializer is not undefined, throw a TypeError exception.
+    _disallowProperty(elementObject, "initializer");
+
+    // 17. If key is a Private Name,
+    // 17.a  If descriptor.[[Enumerable]] is true, throw a TypeError exception.
+    // 17.b  If descriptor.[[Configurable]] is true, throw a TypeError exception.
+    // 17.c  If placement is "prototype" or "static", throw a TypeError exception.
+    // 18. If kind is "field",
+    // 18.a  If descriptor has a [[Get]], [[Set]] or [[Value]] internal slot,
+    //       throw a TypeError exception.
+    // FIELDS AND PRIVATE PROPERTIES ARE NOT SUPPOTED YET
+
+    // 19. Let element be {
+    //       [[Kind]]: kind,
+    //       [[Key]]: key,
+    //       [[Placement]]: placement,
+    //       [[Descriptor]]: descriptor
+    //     }.
+    var element = {
+      kind: kind,
+      key: key,
+      placement: placement,
+      descriptor: descriptor
+    };
+
+    // 20. If [[Kind]] is "field", set element.[[Initializer]] to initializer.
+    // FIELDS ARE NOT SUPPORTED YET
+
+    // 21. Return the Record
+    //     { [[Element]]: element, [[Finisher]]: finisher, [[Extras]]: extras }.
+    return { element: element, finisher: finisher, extras: extras };
+  }
+
+  // FromClassDescriptor
+  function _fromClassDescriptor(elements) {
+    // 1. Let elementsObjects be FromElementDescriptors(elements).
+    // 2. Let obj be ! ObjectCreate(%ObjectPrototype%).
+    // 5. Perform ! CreateDataPropertyOrThrow(obj, "kind", "class").
+    // 6. Perform ! CreateDataPropertyOrThrow(obj, "elements", elementsObjects).
+    var obj = {
+      kind: "class",
+      elements: elements.map(_fromElementDescriptor)
+    };
+
+    // 3. Let desc be PropertyDescriptor{
+    //      [[Value]]: "Class Descriptor",
+    //      [[Writable]]: false,
+    //      [[Enumerable]]: false,
+    //      [[Configurable]]: true
+    //    }.
+    var desc = { value: "Class Descriptor", configurable: true };
+
+    // 4. Perform ! DefinePropertyOrThrow(obj, @@toStringTag, desc).
+    Object.defineProperty(obj, Symbol.toStringTag, desc);
+
+    // 7. Return obj.
+    return obj;
+  }
+
+  // ToClassDescriptor
+  function _toClassDescriptor(obj) {
+    // 1. Let kind be ? ToString(? Get(obj, "kind").
+    var kind = String(obj.kind);
+
+    // 2. If kind is not "class", throw a TypeError exception.
+    if (kind !== "class") throw new TypeError();
+
+    // 3. Let key be ? Get(obj, "key").
+    // 4. If key is not undefined, throw a TypeError exception.
+    _disallowProperty(obj, "key");
+
+    // 5. Let placement be ? Get(obj, "placement").
+    // 6. If placement is not undefined, throw a TypeError exception.
+    _disallowProperty(obj, "placement");
+
+    // 7. Let descriptor be ? Get(obj, "descriptor").
+    // 8. If descriptor is not undefined, throw a TypeError exception.
+    _disallowProperty(obj, "descriptor");
+
+    // 9. Let initializer be ? Get(obj, "initializer").
+    // 10. If initializer is not undefined, throw a TypeError exception.
+    _disallowProperty(obj, "initializer");
+
+    // 11. Let extras be ? Get(obj, "extras").
+    // 12. If extras is not undefined, throw a TypeError exception.
+    _disallowProperty(obj, "extras");
+
+    // 13. Let finisher be ? Get(obj, "finisher").
+    // 14. If finisher is not undefined,
+    // 14.a  If IsCallable(finisher) is false, throw a TypeError exception.
+    var finisher = _optionalCallableProperty(obj, "finisher");
+
+    // 15. Let elementsObject be ? Get(obj, "elements").
+    // 16. Let elements be ? ToElementDescriptors(elementsObject).
+    var elements = _toElementDescriptors(obj.elements);
+
+    // 17. Return the Record { [[Elements]]: elements, [[Finisher]]: finisher }.
+    return { elements: elements, finisher: finisher };
+  }
+
+  function _disallowProperty(obj, name) {
+    if (obj[name] !== undefined) {
+      throw new TypeError("Unexpected '" + name + "' property.");
+    }
+  }
+
+  function _optionalCallableProperty(obj, name) {
+    var value = obj[name];
+    if (value !== undefined && typeof value !== "function") {
+      throw new TypeError("Expected '" + name + "' to be a function");
+    }
+    return value;
+  }
+`;

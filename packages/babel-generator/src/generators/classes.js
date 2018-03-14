@@ -1,12 +1,5 @@
-import * as t from "@babel/types";
-
-export function ClassDeclaration(node: Object, parent: Object) {
-  if (
-    !t.isExportDefaultDeclaration(parent) &&
-    !t.isExportNamedDeclaration(parent)
-  ) {
-    this.printJoin(node.decorators, node);
-  }
+export function ClassDeclaration(node: Object) {
+  this.printJoin(node.decorators, node);
 
   if (node.declare) {
     // TS
