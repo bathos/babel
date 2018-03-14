@@ -885,7 +885,7 @@ helpers.decorate = () => template.program.ast`
   import toArray from "toArray";
 
   // ClassDefinitionEvaluation
-  export default function _decorate(F, definitions, decorators) {
+  export default function _decorate(F, decorators, definitions) {
     // 26. Let elements be a new empty list
     var elements = [];
     // 27. For each ClassElement d in order from definitions

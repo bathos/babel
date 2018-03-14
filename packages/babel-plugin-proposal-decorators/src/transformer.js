@@ -1,7 +1,11 @@
 import { types as t } from "@babel/core";
 import splitExportDeclaration from "@babel/helper-split-export-declaration";
 
-function hasDecorators(node) {
+function prop(key, value) {
+  return t.objectProperty(t.identifier(key), value);
+}
+
+function hasDecorators({ node }) {
   if (node.decorators && node.decorators.length > 0) return true;
 
   const body = node.body.body;
@@ -16,7 +20,7 @@ function hasDecorators(node) {
   return false;
 }
 
-function extractDecorators(node) {
+function extractDecorators({ node }) {
   let result;
   if (node.decorators && node.decorators.length > 0) {
     result = t.arrayExpression(node.decorators.map(n => n.expression));
@@ -25,15 +29,65 @@ function extractDecorators(node) {
   return result;
 }
 
-function prop(key, value) {
-  if (typeof key === "string") key = t.identifier(key);
-  if (typeof value === "string") value = t.stringLiteral(value);
-  return t.objectProperty(key, value);
+function getSingleElementDefinition(path) {
+  const { node } = path;
+  const properties = [];
+
+  let key;
+  if (node.computed) {
+    if (!t.isImmutable(node.key)) {
+      key = path.scope.maybeGenerateMemoised(node.key);
+    }
+    if (key) {
+      path.set("key", t.assignmentExpression("=", t.cloneNode(key), node.key));
+    } else {
+      key = t.cloneNode(node.key);
+    }
+  } else {
+    switch (node.key.type) {
+      case "Identifier":
+        key = t.stringLiteral(node.key.name);
+        break;
+      case "NumericLiteral":
+      case "StringLiteral":
+        key = t.stringLiteral(node.key.value);
+        break;
+      default:
+        throw new Error("Unexpected id");
+    }
+  }
+  properties.push(prop("key", key));
+
+  const placement = node.static ? "static" : "prototype";
+  properties.push(prop("placement", t.stringLiteral(placement)));
+
+  const decorators = extractDecorators(path);
+  if (decorators) {
+    properties.push(prop("decorators", decorators));
+  }
+
+  return t.objectExpression(properties);
+}
+
+function getElementsDefinitions(path) {
+  const elements = [];
+  for (const p of path.get("body.body")) {
+    if (
+      p.isClassMethod({ static: false, computed: false }) &&
+      p.get("key").isIdentifier({ name: "constructor" })
+    ) {
+      continue;
+    }
+
+    elements.push(getSingleElementDefinition(p));
+  }
+
+  return t.arrayExpression(elements);
 }
 
 export default {
   ClassDeclaration(path) {
-    if (!hasDecorators(path.node)) return;
+    if (!hasDecorators(path)) return;
 
     if (path.parentPath.isExportDefaultDeclaration()) {
       if (!path.node.id) {
@@ -56,53 +110,15 @@ export default {
   },
 
   ClassExpression(path) {
-    const { node } = path;
-    if (!hasDecorators(node)) return;
-
-    const elements = [];
-    for (const d of node.body.body) {
-      if (
-        t.isClassMethod(d) &&
-        !d.static &&
-        !d.computed &&
-        d.key.name === "constructor"
-      ) {
-        continue;
-      }
-
-      const properties = [];
-
-      const decorators = extractDecorators(d);
-      if (decorators) {
-        properties.push(prop("decorators", decorators));
-      }
-
-      let key;
-      if (d.computed) {
-        key = d.key;
-      } else if (t.isIdentifier(d.key)) {
-        key = d.key.name;
-      } else if (t.isNumericLiteral(d.key)) {
-        key = d.key.value;
-      } else {
-        throw new Error("Unexpected id");
-      }
-      properties.push(prop("key", key));
-
-      const placement = d.static ? "static" : "prototype";
-      properties.push(prop("placement", placement));
-
-      elements.push(t.objectExpression(properties));
-    }
+    if (!hasDecorators(path)) return;
 
     const helper = this.addHelper("decorate");
-    const arr = t.arrayExpression(elements);
-    arr._compact = true;
-    const args = [node, arr];
+    const args = [
+      path.node,
+      extractDecorators(path) || t.arrayExpression([]),
+      getElementsDefinitions(path),
+    ];
 
-    const decorators = extractDecorators(node);
-    if (decorators) args.push(decorators);
-
-    path.replaceWith(t.callExpression(helper, args))[0].skip();
+    path.replaceWith(t.callExpression(helper, args));
   },
 };
