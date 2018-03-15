@@ -1108,8 +1108,8 @@ helpers.decorate = () => template.program.ast`
     var finishers = [];
 
     // 3. For each decorator in element.[[Decorators]], in reverse list order do
-    for (var i = element.decorators.length - 1; i >= 0; i--) {
-      var decorator = element.decorators[i];
+    for (var decorators = element.decorators, i = decorators.length - 1; i >= 0; i--) {
+      var decorator = decorators[i];
 
       // 3.b. Remove element.[[Key]] from keys
       keys.splice(keys.indexOf(element.key), 1);
@@ -1117,7 +1117,7 @@ helpers.decorate = () => template.program.ast`
       // 3.c Let elementObject be ? FromElementDescriptor(element).
       // 3.d Let elementFinisherExtrasObject be ? Call(decorator, undefined, elementObject).
       // 3.e Let elementFinisherExtras be ? ToElementDescriptor(elementFinisherExtrasObject).
-      var elementFinisherExtras = _toElementDescriptor(
+      var elementFinisherExtras = _toElementFinisherExtras(
         decorator(_fromElementDescriptor(element))
       );
 
@@ -1136,11 +1136,12 @@ helpers.decorate = () => template.program.ast`
       var newExtras = elementFinisherExtras.extras;
 
       // 3.k If newExtras is not undefined, then
-      if (newExtras) {
+      if (elementFinisherExtras.extras) {
         // 3.k.i For each extra of newExtras, do
-        for (var i = 0; i < newExtras.length; i++) {
-          _decorateElement_pushKey(keys, newExtras[i]);
+        for (var j = 0; j < newExtras.length; j++) {
+          _decorateElement_pushKey(keys, newExtras[j]);
         }
+        extras = extras.concat(newExtras);
       }
     }
 
@@ -1152,7 +1153,7 @@ helpers.decorate = () => template.program.ast`
     // 3.g If element.[[Key]] is an element of keys, throw a TypeError
     //     exception
     if (keys.indexOf(element.key) !== -1) {
-      throw new TypeError("Duplicated key");
+      throw new TypeError("Duplicated key " + element.key);
     }
 
     // 3.h Otherwise, append element.[[Key]] to keys
@@ -1191,7 +1192,7 @@ helpers.decorate = () => template.program.ast`
         for (var j = 0; j < elements.length - 1; j++) {
           for (var k = j + 1; k < elements.length; k++) {
             if (elements[j].key === elements[k].key) {
-              throw new Error("Duplicated key.");
+              throw new Error("Duplicated key " + elements[j].key);
             }
           }
         }
@@ -1249,7 +1250,7 @@ helpers.decorate = () => template.program.ast`
     // 4. For each elementObject in elementObjectList, do
     // 4.a  Append ToElementDescriptor(elementObject) to elements.
     // 5. Return elements.
-    return toArray(elementObjects).forEach(_toElementDescriptor);
+    return toArray(elementObjects).map(_toElementDescriptor);
   }
 
   // ToElementDescriptor
@@ -1291,15 +1292,6 @@ helpers.decorate = () => template.program.ast`
     // 9. Let initializer be ? Get(descriptor, "initializer").
     // NOT SUPPORTED YET
 
-    // 10. Let finisher be ? Get(descriptor, "finisher").
-    // 11. If IsCallable(finisher) is false and finisher is not undefined,
-    //     throw a TypeError exception.
-    var finisher = _optionalCallableProperty(elementObject, "finisher");
-
-    // 12. Let extrasObject be ? Get(descriptor, "extras").
-    // 13. Let extras be ? ToElementDescriptors(extrasObject).
-    var extras = _toElementDescriptors(elementObject.extras);
-
     // 14. Let elements be ? Get(descriptor, "elements").
     // 15. If elements is not undefined, throw a TypeError exception.
     _disallowProperty(elementObject, "elements");
@@ -1333,8 +1325,22 @@ helpers.decorate = () => template.program.ast`
     // 20. If [[Kind]] is "field", set element.[[Initializer]] to initializer.
     // FIELDS ARE NOT SUPPORTED YET
 
-    // 21. Return the Record
-    //     { [[Element]]: element, [[Finisher]]: finisher, [[Extras]]: extras }.
+    // 21. Return element.
+    return element;
+  }
+
+  function _toElementFinisherExtras(elementObject) {
+    var element = _toElementDescriptor(elementObject);
+
+    // 10. Let finisher be ? Get(descriptor, "finisher").
+    // 11. If IsCallable(finisher) is false and finisher is not undefined,
+    //     throw a TypeError exception.
+    var finisher = _optionalCallableProperty(elementObject, "finisher");
+
+    // 12. Let extrasObject be ? Get(descriptor, "extras").
+    // 13. Let extras be ? ToElementDescriptors(extrasObject).
+    var extras = _toElementDescriptors(elementObject.extras);
+
     return { element: element, finisher: finisher, extras: extras };
   }
 

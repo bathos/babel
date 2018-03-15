@@ -50,7 +50,7 @@ function getSingleElementDefinition(path) {
         break;
       case "NumericLiteral":
       case "StringLiteral":
-        key = t.stringLiteral(node.key.value);
+        key = t.stringLiteral(String(node.key.value));
         break;
       default:
         throw new Error("Unexpected id");
