@@ -69,21 +69,40 @@ function getSingleElementDefinition(path) {
   return t.objectExpression(properties);
 }
 
+function isConstructor(path) {
+  return (
+    path.isClassMethod() &&
+    !path.node.static &&
+    !path.node.computed &&
+    path.get("key").isIdentifier({ name: "constructor" })
+  );
+}
+
 function getElementsDefinitions(path) {
   const elements = [];
   for (const p of path.get("body.body")) {
-    if (
-      p.isClassMethod({ static: false, computed: false }) &&
-      p.get("key").isIdentifier({ name: "constructor" })
-    ) {
-      continue;
+    if (!isConstructor(p)) {
+      elements.push(getSingleElementDefinition(p));
     }
-
-    elements.push(getSingleElementDefinition(p));
   }
 
   return t.arrayExpression(elements);
 }
+
+function getConstructorPath(path) {
+  return path.get("body.body").find(isConstructor);
+}
+
+const bareSupersVisitor = {
+  CallExpression(path, { initializeInstanceElements }) {
+    if (path.get("callee").isSuper()) {
+      path.insertAfter(t.cloneNode(initializeInstanceElements));
+    }
+  },
+  Function(path) {
+    if (!path.isArrowFunctionExpression()) path.skip();
+  },
+};
 
 export default {
   ClassDeclaration(path) {
@@ -112,13 +131,63 @@ export default {
   ClassExpression(path) {
     if (!hasDecorators(path)) return;
 
-    const helper = this.addHelper("decorate");
+    const isBase = !path.node.superClass;
+
+    const internalSlotsId = path.scope.generateUidIdentifier("internalSlots");
+    const initializeInstanceElements = t.callExpression(
+      this.addHelper("initializeInstanceElements"),
+      [t.thisExpression(), t.cloneNode(internalSlotsId)],
+    );
+
     const args = [
-      path.node,
+      t.functionExpression(
+        null,
+        [internalSlotsId],
+        t.blockStatement([t.returnStatement(path.node)]),
+      ),
       extractDecorators(path) || t.arrayExpression([]),
       getElementsDefinitions(path),
     ];
 
-    path.replaceWith(t.callExpression(helper, args));
+    const constructorPath = getConstructorPath(path);
+    if (constructorPath) {
+      if (isBase) {
+        constructorPath
+          .get("body")
+          .unshiftContainer("body", [
+            t.expressionStatement(initializeInstanceElements),
+          ]);
+      } else {
+        constructorPath.traverse(bareSupersVisitor, {
+          initializeInstanceElements,
+        });
+      }
+    } else {
+      const constructor = isBase
+        ? t.objectMethod(
+            "method",
+            t.identifier("constructor"),
+            [],
+            t.blockStatement([
+              t.expressionStatement(initializeInstanceElements),
+            ]),
+          )
+        : t.objectMethod(
+            "method",
+            t.identifier("constructor"),
+            [t.restElement(t.identifier("args"))],
+            t.blockStatement([
+              t.expressionStatement(
+                t.callExpression(t.Super(), [
+                  t.spreadElement(t.identifier("args")),
+                ]),
+              ),
+              t.expressionStatement(initializeInstanceElements),
+            ]),
+          );
+      path.node.body.body.push(constructor);
+    }
+
+    path.replaceWith(t.callExpression(this.addHelper("decorate"), args));
   },
 };

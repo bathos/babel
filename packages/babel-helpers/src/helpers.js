@@ -883,16 +883,21 @@ helpers.applyDecoratedDescriptor = () => template.program.ast`
 
 helpers.decorate = () => template.program.ast`
   import toArray from "toArray";
+  import defineClassElement from "defineClassElement";
 
   // ClassDefinitionEvaluation (Steps 26-*)
-  export default function _decorate(F, decorators, definitions) {
+  export default function _decorate(factory, decorators, definitions) {
+    var internalSlots = { elements: null };
+    var F = factory(internalSlots);
+
     var elements = definitions.map(function (d) {
       return _createElementDescriptor(F, d);
     });
     elements = _coalesceClassElements(elements);
 
     var decorated = _decorateClass(elements, decorators);
-    _initializeClassElements(F, F.prototype, decorated.elements);
+    internalSlots.elements = decorated.elements;
+    _initializeClassElements(F, F.prototype, internalSlots);
     return _runClassFinishers(F, decorated.finishers);
   }
 
@@ -906,7 +911,7 @@ helpers.decorate = () => template.program.ast`
         var homeObject = Class;
         break;
       case "own":
-        throw new Error("Own properties are not supported by Babel yet.");
+        throw new Error("Class fields are not supported by Babel yet.");
     }
 
     var element = {
@@ -980,13 +985,13 @@ helpers.decorate = () => template.program.ast`
   }
 
   // InitializeClassElements
-  function _initializeClassElements(F, proto, elements) {
-    for (var i = 0; i < elements.length; i++) {
-      var element = elements[i];
+  function _initializeClassElements(F, proto, internalSlots) {
+    for (var i = 0; i < internalSlots.elements.length; i++) {
+      var element = internalSlots.elements[i];
 
       if (element.kind === "method") {
         var receiver = element.placement === "static" ? F : proto;
-        Object.defineProperty(receiver, element.key, element.descriptor);
+        defineClassElement(receiver, element);
       } else {
         throw new Error("Class fields are not supported by Babel yet.");
       }
@@ -1123,6 +1128,7 @@ helpers.decorate = () => template.program.ast`
 
   // ToElementDescriptor
   function _toElementDescriptor(elementObject) {
+    var kind = elementObject.kind;
     if (kind !== "method" && kind !== "field") {
       throw new TypeError();
     } else if (kind === "field") {
@@ -1139,8 +1145,6 @@ helpers.decorate = () => template.program.ast`
       placement !== "own"
     ) {
       throw new TypeError();
-    } else if (placement === "own") {
-      throw new TypeError("Own properties are not supported by Babel yet.");
     }
 
     var descriptor = elementObject.descriptor;
@@ -1206,5 +1210,26 @@ helpers.decorate = () => template.program.ast`
       throw new TypeError("Expected '" + name + "' to be a function");
     }
     return value;
+  }
+`;
+
+helpers.initializeInstanceElements = () => template.program.ast`
+  import defineClassElement from "defineClassElement";
+
+  export default function _initializeInstanceElements(O, internalSlots) {
+    internalSlots.elements.forEach(function (element) {
+      if (element.kind === "method" && element.placement === "own") {
+        _defineClassElement(O, element);
+      }
+    });
+  }
+`;
+
+helpers.defineClassElement = () => template.program.ast`
+  export default function _defineClassElement(receiver, element) {
+    if (element.kind === "field") {
+      throw new Error("Fields are not supported by Babel yet.");
+    }
+    Object.defineProperty(receiver, element.key, element.descriptor);
   }
 `;
