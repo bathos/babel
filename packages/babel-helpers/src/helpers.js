@@ -881,44 +881,42 @@ helpers.applyDecoratedDescriptor = () => template.program.ast`
     }
 `;
 
-helpers.decorate = () => template.program.ast`
-  import toArray from "toArray";
-  import defineClassElement from "defineClassElement";
-
+helpers.enhanceClass = () => template.program.ast`
   // ClassDefinitionEvaluation (Steps 26-*)
-  export default function _decorate(factory, decorators, definitions) {
-    var internalSlots = { elements: null };
-    var F = factory(internalSlots);
+  export default function _enhanceClass(factory) {
+    var internalSlots = { F: null, elements: null, finishers: null };
 
-    var elements = definitions.map(function (d) {
-      return _createElementDescriptor(F, d);
+    factory(internalSlots, function defineClass(F, definitions) {
+      var elements = definitions.map(_createElementDescriptor);
+      elements = _coalesceClassElements(elements);
+
+      internalSlots.F = F;
+      internalSlots.elements = elements;
+    }, function initializeClassElements() {
+      _initializeClassElements(internalSlots);
+    }, function initializeInsanceElements(O) {
+      _initializeInstanceElements(O, internalSlots);
     });
-    elements = _coalesceClassElements(elements);
-
-    var decorated = _decorateClass(elements, decorators);
-    internalSlots.elements = decorated.elements;
-    _initializeClassElements(F, F.prototype, internalSlots);
-    return _runClassFinishers(F, decorated.finishers);
+    
+    return internalSlots.F;
   }
 
   // ClassElementEvaluation
-  function _createElementDescriptor(Class, def) {
-    switch (def.placement) {
-      case "prototype":
-        var homeObject = Class.prototype;
-        break;
-      case "static":
-        var homeObject = Class;
-        break;
-      case "own":
-        throw new Error("Class fields are not supported by Babel yet.");
+  function _createElementDescriptor(def) {
+    let descriptor;
+    if (def.kind === "method") {
+      descriptor = { value: def.value, writable: true, configurable: true };
+    } else if (def.kind === "get") {
+      descriptor = { get: def.value, configurable: true };
+    } else if (def.kind === "set") {
+      descriptor = { set: def.value, configurable: true };
     }
 
     var element = {
       kind: "method",
       key: def.key,
-      placement: def.placement,
-      descriptor: Object.getOwnPropertyDescriptor(homeObject, def.key)
+      placement: def.static ? "static" : "prototype",
+      descriptor: descriptor,
       // initializer,
       // extras,
       // finisher
@@ -985,29 +983,60 @@ helpers.decorate = () => template.program.ast`
   }
 
   // InitializeClassElements
-  function _initializeClassElements(F, proto, internalSlots) {
-    for (var i = 0; i < internalSlots.elements.length; i++) {
-      var element = internalSlots.elements[i];
+  function _initializeClassElements(internalSlots) {
+    var F = internalSlots.F;
+    var proto = F.prototype;
 
+    internalSlots.elements.forEach(function (element) {
       if (element.kind === "method") {
         var receiver = element.placement === "static" ? F : proto;
-        defineClassElement(receiver, element);
-      } else {
-        throw new Error("Class fields are not supported by Babel yet.");
+        _defineClassElement(receiver, element);
       }
-    }
+    });
+    internalSlots.elements.forEach(function (element) {
+      var placement = element.placement;
+      if (
+        element.kind === "field" &&
+        (placement === "static" || placement === "prototype")
+      ) {
+        var receiver = placement === "static" ? F : proto;
+        _defineClassElement(receiver, element);
+      }
+    });
   }
 
-  // RunClassFinishers
-  function _runClassFinishers(constructor, finishers) {
-    for (var i = 0; i < finishers.length; i++) {
-      var newConstructor = (0, finishers[i])(constructor);
-      if (newConstructor !== undefined) {
-        if (typeof newConstructor !== "function") throw new TypeError();
-        constructor = newConstructor;
+  // InitializeInstanceElements
+  function _initializeInstanceElements(O, internalSlots) {
+    internalSlots.elements.forEach(function (element) {
+      if (element.kind === "method" && element.placement === "own") {
+        _defineClassElement(O, element);
       }
+    });
+    internalSlots.elements.forEach(function (element) {
+      if (element.kind === "field" && element.placement === "own") {
+        _defineClassElement(O, element);
+      }
+    });
+  }
+
+  // DefineClassElement
+  function _defineClassElement(receiver, element) {
+    if (element.kind === "field") {
+      var initializer = element.initializer;
+      element.descriptor.value =
+        initializer === void 0 ? void 0 : initializer.call(receiver);
     }
-    return constructor;
+    Object.defineProperty(receiver, element.key, element.descriptor);
+  }
+`;
+
+helpers.decorateStart = () => template.program.ast`
+  import toArray from "toArray";
+
+  export default function _decorateStart(internalSlots, classDecorators) {
+    var decorated = _decorateClass(internalSlots.elements, classDecorators);
+    internalSlots.elements = decorated.elements;
+    internalSlots.finishers = decorated.finishers;
   }
 
   // DecorateClass
@@ -1031,6 +1060,10 @@ helpers.decorate = () => template.program.ast`
       } else {
         newElements.push(element);
       }
+    }
+
+    if (!decorators) {
+      return { elements: newElements, finishers: finishers };
     }
 
     var result = _decorateConstructor(newElements, decorators);
@@ -1123,7 +1156,13 @@ helpers.decorate = () => template.program.ast`
 
   // ToElementDescriptors
   function _toElementDescriptors(elementObjects) {
-    return elementObjects && toArray(elementObjects).map(_toElementDescriptor);
+    if (elementObjects === undefined) return;
+    return toArray(elementObjects).map(function (elementObject) {
+      var element = _toElementDescriptor(elementObject);
+      _disallowProperty(elementObject, "finisher");
+      _disallowProperty(elementObject, "extras");
+      return element;
+    });
   }
 
   // ToElementDescriptor
@@ -1131,8 +1170,6 @@ helpers.decorate = () => template.program.ast`
     var kind = elementObject.kind;
     if (kind !== "method" && kind !== "field") {
       throw new TypeError();
-    } else if (kind === "field") {
-      throw new TypeError("Field decorators are not supported by Babel yet.");
     }
 
     var key = elementObject.key;
@@ -1150,14 +1187,25 @@ helpers.decorate = () => template.program.ast`
     var descriptor = elementObject.descriptor;
 
     _disallowProperty(elementObject, "elements");
-    _disallowProperty(elementObject, "initializer");
 
-    return {
+    var element = {
       kind: kind,
       key: key,
       placement: placement,
       descriptor: descriptor
     };
+
+    if (kind !== "field") {
+      _disallowProperty(elementObject, "initializer");
+    } else {
+      _disallowProperty(descriptor, "get");
+      _disallowProperty(descriptor, "set");
+      _disallowProperty(descriptor, "value");
+
+      element.initializer = elementObject.initializer;
+    }
+
+    return element;
   }
 
   function _toElementFinisherExtras(elementObject) {
@@ -1213,23 +1261,23 @@ helpers.decorate = () => template.program.ast`
   }
 `;
 
-helpers.initializeInstanceElements = () => template.program.ast`
-  import defineClassElement from "defineClassElement";
-
-  export default function _initializeInstanceElements(O, internalSlots) {
-    internalSlots.elements.forEach(function (element) {
-      if (element.kind === "method" && element.placement === "own") {
-        _defineClassElement(O, element);
-      }
-    });
+helpers.decorateEnd = () => template.program.ast`
+  export default function _decorateEnd(internalSlots) {
+    internalSlots.F = _runClassFinishers(
+      internalSlots.F,
+      internalSlots.finishers
+    );
   }
-`;
 
-helpers.defineClassElement = () => template.program.ast`
-  export default function _defineClassElement(receiver, element) {
-    if (element.kind === "field") {
-      throw new Error("Fields are not supported by Babel yet.");
+  // RunClassFinishers
+  function _runClassFinishers(constructor, finishers) {
+    for (var i = 0; i < finishers.length; i++) {
+      var newConstructor = (0, finishers[i])(constructor);
+      if (newConstructor !== undefined) {
+        if (typeof newConstructor !== "function") throw new TypeError();
+        constructor = newConstructor;
+      }
     }
-    Object.defineProperty(receiver, element.key, element.descriptor);
+    return constructor;
   }
 `;
