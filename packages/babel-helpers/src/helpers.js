@@ -910,18 +910,18 @@ helpers.enhanceClass = () => template.program.ast`
       descriptor = { get: def.value, configurable: true };
     } else if (def.kind === "set") {
       descriptor = { set: def.value, configurable: true };
+    } else if (def.kind === "field") {
+      descriptor = { configurable: true, writable: true };
     }
 
     var element = {
-      kind: "method",
+      kind: def.kind === "field" ? "field" : "method",
       key: def.key,
-      placement: def.static ? "static" : "prototype",
-      descriptor: descriptor,
-      // initializer,
-      // extras,
-      // finisher
+      placement: def.static ? "static" : def.kind === "field" ? "own" : "prototype",
+      descriptor: descriptor
     };
     if (def.decorators) element.decorators = def.decorators;
+    if (def.kind === "field") element.initializer = def.value;
 
     return element;
   }
@@ -1148,8 +1148,13 @@ helpers.decorateStart = () => template.program.ast`
       descriptor: element.descriptor
     };
 
-    var desc = { value: "Method Descriptor", configurable: true };
+    var desc = {
+      value: element.kind === "method" ? "Method Descriptor" : "Field Descriptor",
+      configurable: true
+    };
     Object.defineProperty(obj, Symbol.toStringTag, desc);
+
+    if (element.kind === "field") obj.initializer = element.initializer;
 
     return obj;
   }

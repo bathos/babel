@@ -12,7 +12,6 @@ function hasDecorators({ node }) {
   const body = node.body.body;
   for (let i = 0; i < body.length; i++) {
     const method = body[i];
-    if (!t.isClassMethod(method)) continue;
     if (method.decorators && method.decorators.length > 0) {
       return true;
     }
@@ -32,7 +31,13 @@ function extractDecorators({ node }) {
 
 function getSingleElementDefinition(path, superRef, classRef, file) {
   const { node } = path;
-  const properties = [prop("kind", t.stringLiteral(node.kind))];
+  const properties = [];
+
+  if (path.isClassMethod()) {
+    properties.push(prop("kind", t.stringLiteral(node.kind)));
+  } else {
+    properties.push(prop("kind", t.stringLiteral("field")));
+  }
 
   const decorators = extractDecorators(path);
   if (decorators) properties.push(prop("decorators", decorators));
@@ -70,9 +75,20 @@ function getSingleElementDefinition(path, superRef, classRef, file) {
     true,
   ).replace();
 
-  properties.push(
-    t.objectMethod(node.kind, t.identifier("value"), node.params, node.body),
-  );
+  if (path.isClassMethod()) {
+    properties.push(
+      t.objectMethod("method", t.identifier("value"), node.params, node.body),
+    );
+  } else {
+    properties.push(
+      t.objectMethod(
+        "method",
+        t.identifier("value"),
+        [],
+        t.blockStatement([t.returnStatement(node.value)]),
+      ),
+    );
+  }
 
   return t.objectExpression(properties);
 }
