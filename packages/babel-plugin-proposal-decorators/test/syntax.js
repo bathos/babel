@@ -2,7 +2,7 @@ import { parse } from "@babel/core";
 import cases from "jest-in-case";
 import proposalDecorators from "../lib";
 
-describe("legacy option", function() {
+describe.skip("legacy option", function() {
   const OLD = "@dec export class Foo {}";
   const NEW = "export @dec class Foo {}";
 
