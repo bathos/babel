@@ -20,9 +20,6 @@
   },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.42",
-    "@babel/helper-plugin-test-runner": "7.0.0-beta.42",
-    "@babel/helper-replace-supers": "7.0.0-beta.42",
-    "@babel/helper-split-export-declaration": "7.0.0-beta.42",
-    "jest-in-case": "^1.0.2"
+    "@babel/helper-plugin-test-runner": "7.0.0-beta.42"
   }
 }
