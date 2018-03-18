@@ -9,10 +9,15 @@ export default declare((api, opts) => {
 
   let loose = false;
   let useBuiltIns = false;
+  let decoratorsLegacy = false;
 
   if (opts !== undefined) {
     if (opts.loose !== undefined) loose = opts.loose;
     if (opts.useBuiltIns !== undefined) useBuiltIns = opts.useBuiltIns;
+    if (opts.useBuiltIns !== undefined) useBuiltIns = opts.useBuiltIns;
+    if (opts.decoratorsLegacy !== undefined) {
+      decoratorsLegacy = opts.decoratorsLegacy;
+    }
   }
 
   if (typeof loose !== "boolean") {
@@ -23,9 +28,14 @@ export default declare((api, opts) => {
       "@babel/preset-stage-0 'useBuiltIns' option must be a boolean.",
     );
   }
+  if (typeof decoratorsLegacy !== "boolean") {
+    throw new Error(
+      "@babel/preset-stage-0 'decoratorsLegacy' option must be a boolean.",
+    );
+  }
 
   return {
-    presets: [[presetStage1, { loose, useBuiltIns }]],
+    presets: [[presetStage1, { loose, useBuiltIns, decoratorsLegacy }]],
     plugins: [transformFunctionBind, transformLogicalAssignmentOperators],
   };
 });
