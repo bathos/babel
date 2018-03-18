@@ -1,5 +1,5 @@
 {
-  "name": "@babel/plugin-proposal-decorators",
+  "name": "@babel/plugin-proposal-enhanced-classes",
   "version": "7.0.0-beta.42",
   "author": "Babel Team (https://babeljs.io/team)",
   "license": "MIT",
