@@ -219,7 +219,9 @@ export default declare(api => {
   }
 
   return {
-    inherits: syntaxDecorators,
+    inherits(babel, options) {
+      return syntaxDecorators(babel, Object.assign({ legacy: true }, options));
+    },
 
     visitor: {
       ClassDeclaration(path) {
