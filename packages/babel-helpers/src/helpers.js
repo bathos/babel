@@ -1172,6 +1172,13 @@ helpers.decorateStart = () => template.program.ast`
 
   // ToElementDescriptor
   function _toElementDescriptor(elementObject) {
+    if (elementObject === undefined) {
+      throw new Error(
+        "The element descriptor is undefined." +
+        " The decorator funciton must return an object."
+      );
+    }
+
     var kind = elementObject.kind;
     if (kind !== "method" && kind !== "field") {
       throw new TypeError();
