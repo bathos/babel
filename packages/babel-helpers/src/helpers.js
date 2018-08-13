@@ -472,7 +472,15 @@ helpers.construct = helper("7.0.0-beta.0")`
     try {
       // If the internal slots aren't set, this throws an error similar to
       //   TypeError: this is not a Date object.
+      // Date#toString is generic in ES2015 [1] and it doesn't throw, so we also
+      // check Map#get (which on the other hand doesn't exist in ES5 browsers).
+      //
+      // [1]: https://github.com/tc39/ecma262/issues/1268#issuecomment-410104832
+
       Date.prototype.toString.call(Reflect.construct(Date, [], function() {}));
+      if (typeof Map === "function") {
+        Map.prototype.get.call(Reflect.construct(Map, [], function() {}));
+      }
       return true;
     } catch (e) {
       return false;
