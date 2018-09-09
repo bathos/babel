@@ -23,11 +23,13 @@ function (_A) {
 
   babelHelpers.inherits(B, _A);
 
+  var _super = babelHelpers.createSuper(B);
+
   function B(...args) {
     var _this;
 
     babelHelpers.classCallCheck(this, B);
-    _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(B).call(this, ...args));
+    _this = _super.call(this, ...args);
 
     _foo.set(babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(_this)), {
       writable: true,

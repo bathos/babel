@@ -12,9 +12,11 @@ var SubFoo =
 function (_BaseFoo) {
   babelHelpers.inherits(SubFoo, _BaseFoo);
 
+  var _super = babelHelpers.createSuper(SubFoo);
+
   function SubFoo() {
     babelHelpers.classCallCheck(this, SubFoo);
-    return babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(SubFoo).apply(this, arguments));
+    return _super.apply(this, arguments);
   }
 
   babelHelpers.createClass(SubFoo, null, [{

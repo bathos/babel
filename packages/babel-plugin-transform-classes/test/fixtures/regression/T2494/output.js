@@ -6,9 +6,11 @@ var x = {
 
     babelHelpers.inherits(_class, _Foo);
 
+    var _super = babelHelpers.createSuper(_class);
+
     function _class() {
       babelHelpers.classCallCheck(this, _class);
-      return babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(_class).apply(this, arguments));
+      return _super.apply(this, arguments);
     }
 
     return _class;

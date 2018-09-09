@@ -12,9 +12,11 @@ let Login =
 function (_React$Component) {
   babelHelpers.inherits(Login, _React$Component);
 
+  var _super = babelHelpers.createSuper(Login);
+
   function Login() {
     babelHelpers.classCallCheck(this, Login);
-    return babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Login).apply(this, arguments));
+    return _super.apply(this, arguments);
   }
 
   babelHelpers.createClass(Login, [{

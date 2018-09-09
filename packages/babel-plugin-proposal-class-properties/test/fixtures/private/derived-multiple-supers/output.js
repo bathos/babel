@@ -5,20 +5,22 @@ function (_Bar) {
 
   babelHelpers.inherits(Foo, _Bar);
 
+  var _super = babelHelpers.createSuper(Foo);
+
   function Foo() {
     var _this;
 
     babelHelpers.classCallCheck(this, Foo);
 
     if (condition) {
-      _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Foo).call(this));
+      _this = _super.call(this);
 
       _bar.set(babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(_this))), {
         writable: true,
         value: "foo"
       });
     } else {
-      _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Foo).call(this));
+      _this = _super.call(this);
 
       _bar.set(babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(_this))), {
         writable: true,

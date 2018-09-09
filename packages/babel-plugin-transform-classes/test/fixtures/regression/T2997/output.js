@@ -11,11 +11,13 @@ function (_A) {
 
   babelHelpers.inherits(B, _A);
 
+  var _super = babelHelpers.createSuper(B);
+
   function B() {
     var _this;
 
     babelHelpers.classCallCheck(this, B);
-    return babelHelpers.possibleConstructorReturn(_this, _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(B).call(this)));
+    return babelHelpers.possibleConstructorReturn(_this, _this = _super.call(this));
   }
 
   return B;

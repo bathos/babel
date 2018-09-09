@@ -17,11 +17,13 @@ var Connection =
 function (_EventEmitter) {
   babelHelpers.inherits(Connection, _EventEmitter);
 
+  var _super = babelHelpers.createSuper(Connection);
+
   function Connection(endpoint, joinKey, joinData, roomId) {
     var _this;
 
     babelHelpers.classCallCheck(this, Connection);
-    _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Connection).call(this));
+    _this = _super.call(this);
     _this.isConnected = false;
     _this.roomId = roomId; // ...
 

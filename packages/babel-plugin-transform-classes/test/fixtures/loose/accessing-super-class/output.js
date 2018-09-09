@@ -5,6 +5,8 @@ function (_Foo) {
 
   babelHelpers.inheritsLoose(Test, _Foo);
 
+  var _super = babelHelpers.createSuper(Test);
+
   function Test() {
     var _Foo$prototype$test;
 

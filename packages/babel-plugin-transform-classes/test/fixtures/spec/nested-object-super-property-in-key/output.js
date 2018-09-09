@@ -21,11 +21,13 @@ var Outer =
 function (_Hello) {
   babelHelpers.inherits(Outer, _Hello);
 
+  var _super = babelHelpers.createSuper(Outer);
+
   function Outer() {
     var _this;
 
     babelHelpers.classCallCheck(this, Outer);
-    _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Outer).call(this));
+    _this = _super.call(this);
     var Inner = {
       [babelHelpers.get(babelHelpers.getPrototypeOf(Outer.prototype), "toString", babelHelpers.assertThisInitialized(_this)).call(babelHelpers.assertThisInitialized(_this))]() {
         return 'hello';

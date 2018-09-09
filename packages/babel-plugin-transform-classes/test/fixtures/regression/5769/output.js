@@ -23,11 +23,13 @@ function (_Point) {
 
   babelHelpers.inherits(ColorPoint, _Point);
 
+  var _super = babelHelpers.createSuper(ColorPoint);
+
   function ColorPoint() {
     var _this;
 
     babelHelpers.classCallCheck(this, ColorPoint);
-    _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(ColorPoint).call(this));
+    _this = _super.call(this);
     _this.x = 2;
     babelHelpers.set(babelHelpers.getPrototypeOf(ColorPoint.prototype), "x", 3, babelHelpers.assertThisInitialized(_this), true);
     expect(_this.x).toBe(3); // A

@@ -5,6 +5,8 @@ function (_Base) {
 
   babelHelpers.inherits(Child, _Base);
 
+  var _super = babelHelpers.createSuper(Child);
+
   function Child() {
     var _this;
 

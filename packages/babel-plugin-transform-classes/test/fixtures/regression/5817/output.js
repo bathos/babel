@@ -5,11 +5,13 @@ function (_B) {
 
   babelHelpers.inherits(A, _B);
 
+  var _super = babelHelpers.createSuper(A);
+
   function A() {
     var _this;
 
     babelHelpers.classCallCheck(this, A);
-    _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(A).call(this));
+    _this = _super.call(this);
 
     _this.arrow1 = function (x) {
       return x;

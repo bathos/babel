@@ -14,11 +14,13 @@ var a1 =
 function (_b) {
   babelHelpers.inherits(a1, _b);
 
+  var _super = babelHelpers.createSuper(a1);
+
   function a1() {
     var _this;
 
     babelHelpers.classCallCheck(this, a1);
-    _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(a1).call(this));
+    _this = _super.call(this);
 
     _this.x = function () {
       return babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(_this));
@@ -35,11 +37,13 @@ var a2 =
 function (_b2) {
   babelHelpers.inherits(a2, _b2);
 
+  var _super2 = babelHelpers.createSuper(a2);
+
   function a2() {
     var _this2;
 
     babelHelpers.classCallCheck(this, a2);
-    _this2 = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(a2).call(this));
+    _this2 = _super2.call(this);
 
     _this2.x = function () {
       return babelHelpers.assertThisInitialized(babelHelpers.assertThisInitialized(_this2));

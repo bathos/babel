@@ -5,6 +5,8 @@ function (_Bar) {
 
   babelHelpers.inherits(Foo, _Bar);
 
+  var _super = babelHelpers.createSuper(Foo);
+
   function Foo(options) {
     babelHelpers.classCallCheck(this, Foo);
     var parentOptions = {};
@@ -13,7 +15,7 @@ function (_Bar) {
       this;
     };
 
-    return babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Foo).call(this, parentOptions));
+    return _super.call(this, parentOptions);
   }
 
   return Foo;

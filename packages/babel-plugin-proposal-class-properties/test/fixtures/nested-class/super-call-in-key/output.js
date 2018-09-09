@@ -15,12 +15,14 @@ let Outer =
 function (_Hello) {
   babelHelpers.inherits(Outer, _Hello);
 
+  var _super = babelHelpers.createSuper(Outer);
+
   function Outer() {
     var _this;
 
     babelHelpers.classCallCheck(this, Outer);
 
-    var _this2 = _this = babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(Outer).call(this));
+    var _this2 = _this = _super.call(this);
 
     let Inner = function Inner() {
       babelHelpers.classCallCheck(this, Inner);

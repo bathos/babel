@@ -11,9 +11,11 @@ function (_Array) {
 
   babelHelpers.inherits(List, _Array);
 
+  var _super = babelHelpers.createSuper(List);
+
   function List() {
     babelHelpers.classCallCheck(this, List);
-    return babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(List).apply(this, arguments));
+    return _super.apply(this, arguments);
   }
 
   return List;

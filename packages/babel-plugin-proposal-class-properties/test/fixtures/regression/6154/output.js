@@ -1,6 +1,10 @@
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+function _createSuper(Derived) { return function () { var Super = _getPrototypeOf(Derived), result; if (_isNativeReflectConstruct()) { for (var l = arguments.length, args = new Array(l), i = 0; i < l; i++) { args[i] = arguments[i]; } var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, args, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -30,9 +34,9 @@ var Test = function Test() {
   function (_Test) {
     _inherits(Other, _Test);
 
-    function Other() {
-      var _getPrototypeOf2;
+    var _super = _createSuper(Other);
 
+    function Other() {
       var _this;
 
       _classCallCheck(this, Other);
@@ -41,7 +45,7 @@ var Test = function Test() {
         args[_key] = arguments[_key];
       }
 
-      _this = _possibleConstructorReturn(this, (_getPrototypeOf2 = _getPrototypeOf(Other)).call.apply(_getPrototypeOf2, [this].concat(args)));
+      _this = _super.call.apply(_super, [this].concat(args));
 
       _defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), "a", function () {
         return _get(_getPrototypeOf(Other.prototype), "test", _assertThisInitialized(_this));

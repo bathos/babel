@@ -12,9 +12,11 @@ var RandomComponent =
 function (_Component) {
   babelHelpers.inherits(RandomComponent, _Component);
 
+  var _super = babelHelpers.createSuper(RandomComponent);
+
   function RandomComponent() {
     babelHelpers.classCallCheck(this, RandomComponent);
-    return babelHelpers.possibleConstructorReturn(this, babelHelpers.getPrototypeOf(RandomComponent).call(this));
+    return _super.call(this);
   }
 
   babelHelpers.createClass(RandomComponent, [{
