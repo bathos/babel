@@ -1040,10 +1040,9 @@
     libnpm "^2.0.1"
     yargs "^12.0.1"
 
-"@lerna/collect-updates@^3.6.0":
+"@lerna/collect-updates@^3.6.0", "@lerna/collect-updates@https://github.com/nicolo-ribaudo/lerna.git#babel-collect-updates":
   version "3.6.0"
-  resolved "https://registry.yarnpkg.com/@lerna/collect-updates/-/collect-updates-3.6.0.tgz#8520d64852c5059b453db53afee22539853f2bde"
-  integrity sha512-knliEz3phY51SGnwDhhYqx6SJN6y9qh/gZrZgQ7ogqz1UgA/MyJb27gszjsyyG6jUQshimBpjsG7OMwjt8+n9A==
+  resolved "https://github.com/nicolo-ribaudo/lerna.git#49861d37095db2ba9dfb4e0e23457c9913a1b87f"
   dependencies:
     "@lerna/child-process" "^3.3.0"
     "@lerna/describe-ref" "^3.6.0"
@@ -6920,7 +6919,7 @@ lerna-changelog@^0.5.0:
     string.prototype.padend "^3.0.0"
     yargs "^6.6.0"
 
-lerna@3.6.0:
+lerna@^3.6.0:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/lerna/-/lerna-3.6.0.tgz#b6616873fa038ee1dae514e04322c191ff71a369"
   integrity sha512-iQFAgrgtv18SI5LtQBBca0WVeYvk2r8eYgiEQtcZBT63T5R9RVv+snsviIiOp0z6gD43tcyiWXiLvBdp1IY/Rg==
