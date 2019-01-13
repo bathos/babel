@@ -928,15 +928,6 @@ export default class StatementParser extends ExpressionParser {
       this.next();
     }
 
-    if (
-      isStatement &&
-      !optionalId &&
-      !this.match(tt.name) &&
-      !this.match(tt._yield)
-    ) {
-      this.unexpected();
-    }
-
     // When parsing function expression, the binding identifier is parsed
     // according to the rules inside the function.
     // e.g. (function* yield() {}) is invalid because "yield" is disallowed in
@@ -950,9 +941,7 @@ export default class StatementParser extends ExpressionParser {
       this.state.inAsync = isAsync;
       this.state.inGenerator = node.generator;
     }
-    if (this.match(tt.name) || this.match(tt._yield)) {
-      node.id = this.parseBindingIdentifier();
-    }
+    node.id = this.parseFunctionId(isStatement, optionalId);
     if (isStatement) {
       this.state.inAsync = isAsync;
       this.state.inGenerator = node.generator;
@@ -979,6 +968,16 @@ export default class StatementParser extends ExpressionParser {
     this.state.inClassProperty = oldInClassProperty;
 
     return node;
+  }
+
+  parseFunctionId(isStatement: boolean, optionalId: boolean): ?N.Identifier {
+    if (this.match(tt.name) || this.match(tt._yield)) {
+      return this.parseBindingIdentifier();
+    }
+    if (isStatement && !optionalId) {
+      this.unexpected();
+    }
+    return null;
   }
 
   parseFunctionParams(node: N.Function, allowModifiers?: boolean): void {
