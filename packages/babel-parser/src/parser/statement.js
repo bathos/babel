@@ -700,7 +700,7 @@ export default class StatementParser extends ExpressionParser {
   parseExpressionStatement(
     node: N.ExpressionStatement,
     expr: N.Expression,
-  ): N.ExpressionStatement {
+  ): N.Statement {
     node.expression = expr;
     this.semicolon();
     return this.finishNode(node, "ExpressionStatement");
