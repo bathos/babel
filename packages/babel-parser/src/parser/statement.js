@@ -1610,9 +1610,7 @@ export default class StatementParser extends ExpressionParser {
 
   parseExportFrom(node: N.ExportNamedDeclaration, expect?: boolean): void {
     if (this.eatContextual("from")) {
-      node.source = this.match(tt.string)
-        ? this.parseExprAtom()
-        : this.unexpected();
+      node.source = this.parseImportSource();
       this.checkExport(node);
     } else {
       if (expect) {
@@ -1819,19 +1817,22 @@ export default class StatementParser extends ExpressionParser {
 
   parseImport(node: N.Node): N.ImportDeclaration | N.TsImportEqualsDeclaration {
     // import '...'
-    if (this.match(tt.string)) {
-      node.specifiers = [];
-      node.source = this.parseExprAtom();
-    } else {
-      node.specifiers = [];
-      this.parseImportSpecifiers(node);
+    node.specifiers = [];
+    if (!this.match(tt.string)) {
+      const hasDefault = this.maybeParseDefaultImportSpecifier(node);
+      const parseNext = !hasDefault || this.eat(tt.comma);
+      const hasStar = parseNext && this.maybeParseStarImportSpecifier(node);
+      if (parseNext && !hasStar) this.parseNamedImportSpecifiers(node);
       this.expectContextual("from");
-      node.source = this.match(tt.string)
-        ? this.parseExprAtom()
-        : this.unexpected();
     }
+    node.source = this.parseImportSource();
     this.semicolon();
     return this.finishNode(node, "ImportDeclaration");
+  }
+
+  parseImportSource(): N.StringLiteral {
+    if (!this.match(tt.string)) this.unexpected();
+    return this.parseExprAtom();
   }
 
   // eslint-disable-next-line no-unused-vars
@@ -1850,9 +1851,7 @@ export default class StatementParser extends ExpressionParser {
     node.specifiers.push(this.finishNode(specifier, type));
   }
 
-  // Parses a comma-separated list of module imports.
-  parseImportSpecifiers(node: N.ImportDeclaration): void {
-    let first = true;
+  maybeParseDefaultImportSpecifier(node: N.ImportDeclaration): boolean {
     if (this.shouldParseDefaultImport(node)) {
       // import defaultObj, { x, y as z } from '...'
       this.parseImportSpecifierLocal(
@@ -1861,10 +1860,12 @@ export default class StatementParser extends ExpressionParser {
         "ImportDefaultSpecifier",
         "default import specifier",
       );
-
-      if (!this.eat(tt.comma)) return;
+      return true;
     }
+    return false;
+  }
 
+  maybeParseStarImportSpecifier(node: N.ImportDeclaration): boolean {
     if (this.match(tt.star)) {
       const specifier = this.startNode();
       this.next();
@@ -1876,10 +1877,13 @@ export default class StatementParser extends ExpressionParser {
         "ImportNamespaceSpecifier",
         "import namespace specifier",
       );
-
-      return;
+      return true;
     }
+    return false;
+  }
 
+  parseNamedImportSpecifiers(node: N.ImportDeclaration) {
+    let first = true;
     this.expect(tt.braceL);
     while (!this.eat(tt.braceR)) {
       if (first) {
